@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>White Hat Visualization</title>
+    <!-- Link To CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+    <!-- Box Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <script src="https://d3js.org/d3-queue.v2.min.js"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <header>
+        <div class="bx bx-menu" id="menu-icon"></div>
+        <ul class="navbar">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="Visualization.html">Visualization</a></li>
+            <li><a href="Black_Hat_Visualization.html">Black Hat Visualization</a></li>
+            <li><a href="White_Hat_Visualization.html">White Hat Visualization</a></li>
+            <li><a href="Credits.html">Credits</a></li>
+        </ul>
+    </header>
+    <!-- visualization -->
+    <section class="White_Hat_Visualization" id="White_Hat_Visualization">
+      <br></br>
+      <div class="heading">
+          <h2>White Hat Visualization</h2>
+          <br>
+      </div>
+      <div class="White_Hat_Visualization-content">
+        <div class="White_Hat_Visualization-img">
+          <div class="title-heading">
+            <h2>State Wise Deaths by Gun Shots In USA</h2>
+            <br>
+          </div>
+        </div>
+        <div id="map"></div>
+        <select name="selectButton" id="selectButton"></select>
+        <div class = "Description">
+          <h4 class = "font_4">Count:<span class = "TotalCount">12070</span></h4>
+        </div>
+        <a target="_blank" href="WhiteHatVisualization.pdf"><h4 class = "font_4">Click here to view the report</h4></a>
+      </div>
+  </section>
+    <!-- Link To JS -->
+    <script src="./js/map.js"></script>
+</body>
+</html>
