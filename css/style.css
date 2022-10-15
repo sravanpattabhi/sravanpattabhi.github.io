@@ -419,3 +419,29 @@ li {
   font-weight: normal;
   line-height: 1.8em;
 }
+#scene {
+  width: 90%;
+  height: 90%;
+}
+
+/* SVG styling */
+svg {
+  font-family: helvetica, sans-serif;
+}
+
+path,
+line {
+  stroke: #777;
+}
+
+.sliderDiv {
+  margin: 10px;
+}
+
+.sliderDiv > input {
+  width: 50%;
+}
+
+.legendDiv {
+  margin: 30px;
+}
