@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HW03</title>
+    <!-- Link To CSS -->
+    <link rel="stylesheet" href="./css/threejs.css">
+    <!-- Box Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.138.3/three.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.122.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.122.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <header>
+        <div class="bx bx-menu" id="menu-icon"></div>
+        <ul class="navbar">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="Visualization.html">Visualization</a></li>
+            <li><a href="Black_Hat_Visualization.html">Black Hat Visualization</a></li>
+            <li><a href="White_Hat_Visualization.html">White Hat Visualization</a></li>
+            <li><a href="d3.html">HW03</a></li>
+            <li><a href="Credits.html">Credits</a></li>
+        </ul>
+    </header>
+    <section>
+        <div class="heading">
+            <h2>Fluid Flow Visualization using Three.js</h2>
+            <br>
+        </div>
+    </section>
+    <!-- Scene Body -->
+    <section>
+        <div class ="sceneContainer">
+            <div class="scene1">
+                <canvas class="scene"></canvas>
+                <script src="./js/scene.js"></script>
+                <script src="./js/particleSystem.js"></script>
+            </div>
+            <div class="scene2">
+                <div class="plane" style="background: black;">
+                </div>
+              </div>
+        </div>
+    </section>
+    <section>
+        <div class ="upButton" id="upButton">
+            <button><a>UP</a></button>
+        </div>
+        <div class ="downButton" id="downButton">
+            <button><a>Down</a></button>
+        </div>
+    </section>
+    <section>
+        <div class="heading">
+            <h4>Z-value:<span class = "pos">5</span></h4>
+            <br>
+        </div>
+    </section>
+</body>
+</html>
