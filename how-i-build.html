@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How I build &mdash; Sravan Pattabhi</title>
+  <meta name="description" content="Case study: the method behind this site &mdash; multi-agent pipelines under scripted orchestration, adversarial review with four lenses, and a human who signs every fix and every rejection.">
+  <meta name="author" content="Sravan Pattabhi">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0C0E13">
+  <meta property="og:title" content="How I build &mdash; Sravan Pattabhi">
+  <meta property="og:description" content="Case study: the method behind this site &mdash; multi-agent pipelines under scripted orchestration, adversarial review with four lenses, and a human who signs every fix and every rejection.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://sravanpattabhi.github.io/how-i-build.html">
+  <meta property="og:image" content="https://sravanpattabhi.github.io/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://sravanpattabhi.github.io/how-i-build.html">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* ============ Tokens -- same committed dark world as the main site ============ */
+  :root {
+    --ink:      #0C0E13;
+    --surface:  #151823;
+    --raised:   #1B1F2E;
+    --bone:     #EAE5D9;
+    --read:     #AEB4C6;
+    --muted:    #8A90A5;
+    --faint:    #565C70;
+    --line:     #262B3A;
+    --amber:    #E8A33D;
+    --amber-dim:#8A6526;
+    --red:      #D96A55;
+    --red-dim:  #7A3A2E;
+
+    --display: "Bricolage Grotesque", "Arial Narrow", Impact, sans-serif;
+    --body:    "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono:    "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+
+    --ease-out:   cubic-bezier(.19, 1, .22, 1);
+    --ease-inout: cubic-bezier(.65, 0, .35, 1);
+    --d-micro: .18s; --d-hover: .42s; --d-reveal: .8s;
+
+    --fs-mono-1: 11px; --fs-mono-2: 12px; --fs-mono-3: 13px;
+
+    --pad: clamp(20px, 5vw, 64px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--bone);
+    font-family: var(--body);
+    font-size: clamp(17px, 1.8vw, 18px);
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* film grain -- carried over from the main site */
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: 80;
+    pointer-events: none; opacity: .05;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="140" height="140"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="140" height="140" filter="url(%23n)"/%3E%3C/svg%3E');
+  }
+
+  ::selection { background: var(--amber); color: var(--ink); }
+
+  a { color: inherit; text-decoration: none; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
+
+  /* ============ Scroll progress hairline ============ */
+  #progress {
+    position: fixed; top: 0; left: 0; height: 2px; width: 0;
+    background: var(--amber); z-index: 60;
+    box-shadow: 0 0 8px rgba(232,163,61,.55);
+  }
+
+  /* ============ Nav ============ */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    background: color-mix(in srgb, var(--ink) 82%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .mark { font-family: var(--mono); font-size: var(--fs-mono-3); letter-spacing: .08em; color: var(--bone); }
+  .mark b { color: var(--amber); font-weight: 500; }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    position: relative; padding: 4px 0;
+    transition: color var(--d-hover) var(--ease-out);
+  }
+  .nav-links a::after {
+    content: ""; position: absolute; left: 0; bottom: 0;
+    width: 100%; height: 1px; background: var(--amber);
+    transform: scaleX(0); transform-origin: right;
+    transition: transform var(--d-hover) var(--ease-out);
+  }
+  .nav-links a:hover { color: var(--bone); }
+  .nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+
+  /* ============ Hero ============ */
+  .cs-hero { padding: 170px 0 72px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
+    text-transform: uppercase; color: var(--amber);
+    display: inline-flex; align-items: center; gap: 10px;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .1s forwards;
+  }
+  .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--amber); }
+
+  .cs-hero h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(42px, 8vw, 96px);
+    line-height: .98;
+    letter-spacing: -0.02em;
+    margin-top: 22px;
+    max-width: 14ch;
+    text-wrap: balance;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .22s forwards;
+  }
+
+  .standfirst {
+    margin-top: 32px;
+    max-width: 68ch;
+    font-size: clamp(18px, 2.2vw, 22px);
+    line-height: 1.55;
+    color: var(--muted);
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .36s forwards;
+  }
+  .standfirst em { color: var(--bone); font-style: normal; }
+
+  .hero-meta {
+    margin-top: 44px;
+    display: flex; gap: 40px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .5s forwards;
+  }
+  .hero-meta span b { color: var(--muted); font-weight: 400; display: block; margin-top: 4px; text-transform: none; }
+
+  @keyframes fadeup {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ Stat strip ============ */
+  .statstrip {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    padding: 40px 0;
+  }
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 22px; }
+  .stat-val {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(28px, 3.6vw, 44px); line-height: 1;
+    color: var(--bone); letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-val .suf { color: var(--amber); }
+  .stat-label {
+    font-family: var(--mono); font-size: var(--fs-mono-1); text-transform: uppercase;
+    letter-spacing: .12em; color: var(--faint); margin-top: 10px; line-height: 1.5;
+  }
+  @media (max-width: 900px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ============ Sections ============ */
+  section.cs { padding: clamp(80px, 10vw, 140px) 0 0; }
+
+  .sec-head {
+    position: relative;
+    display: flex; align-items: baseline; gap: 18px;
+    padding-bottom: 18px; margin-bottom: 34px;
+  }
+  .sec-head::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: var(--line);
+    transform: scaleX(0); transform-origin: left;
+  }
+  .sec-head.in::after { transform: scaleX(1); transition: transform var(--d-reveal) var(--ease-inout) .15s; }
+  .sec-num {
+    font-family: var(--mono); font-size: var(--fs-mono-3); color: var(--amber); letter-spacing: .1em;
+  }
+  .sec-label {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
+    text-transform: uppercase; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .sec-label::before { content: ""; width: 22px; height: 1px; background: var(--amber); }
+  .ghost {
+    position: absolute; right: 0; bottom: -6px;
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(80px, 13vw, 170px); line-height: 1;
+    color: transparent; -webkit-text-stroke: 1px var(--line);
+    pointer-events: none; user-select: none; z-index: -1;
+  }
+
+  .cs h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(30px, 4.6vw, 54px);
+    line-height: 1.06; letter-spacing: -0.015em;
+    max-width: 24ch;
+    text-wrap: balance;
+    margin-bottom: 30px;
+  }
+
+  .prose { max-width: 68ch; }
+  .prose p { color: var(--read); }
+  .prose p + p { margin-top: 1.35em; }
+  .prose strong { color: var(--bone); font-weight: 600; }
+  .prose em { color: var(--bone); font-style: italic; }
+  .prose code {
+    font-family: var(--mono); font-size: .82em;
+    color: var(--bone);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 2px 6px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .prose ul { list-style: none; margin: 1.35em 0; }
+  .prose li {
+    color: var(--read);
+    position: relative; padding-left: 24px;
+  }
+  .prose li + li { margin-top: .65em; }
+  .prose li::before {
+    content: "\25C6"; position: absolute; left: 2px; top: .5em;
+    font-size: 8px; line-height: 1; color: var(--amber-dim);
+  }
+
+  /* ============ Figures (schematic voice) ============ */
+  .viz {
+    margin: 44px 0 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .viz-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px; }
+  .viz-scroll:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
+  .viz svg { display: block; }
+  @media (max-width: 700px) {
+    .viz { position: relative; }
+    .viz-scroll::after {
+      content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 36px;
+      pointer-events: none;
+      background: linear-gradient(to right, transparent, var(--surface));
+    }
+    .viz figcaption { position: relative; background: var(--surface); }
+    .viz figcaption::after { content: " \00B7 drag \2192"; color: var(--faint); }
+  }
+  .viz figcaption {
+    font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .06em;
+    color: var(--faint);
+    border-top: 1px solid var(--line);
+    padding: 10px 16px;
+  }
+  .viz figcaption::before { content: "\25C6"; color: var(--amber-dim); margin-right: 10px; font-size: 8px; }
+
+  /* svg text voice */
+  .viz text { font-family: var(--mono); }
+  .t-bone  { fill: var(--bone); }
+  .t-muted { fill: var(--muted); }
+  .t-faint { fill: var(--faint); }
+  .t-amber { fill: var(--amber); }
+  .t-dim   { fill: var(--amber-dim); }
+  .t-red   { fill: var(--red); }
+  .bx      { fill: var(--ink); stroke: var(--line); }
+  .bx-hot  { fill: var(--ink); stroke: var(--amber-dim); }
+  .bx-off  { fill: var(--ink); stroke: var(--faint); stroke-dasharray: 4 4; }
+  .ln      { stroke: var(--line); fill: none; }
+  .ln-dim  { stroke: var(--faint); fill: none; }
+  .ln-amb  { stroke: var(--amber-dim); fill: none; }
+  .ln-red  { stroke: var(--red); fill: none; }
+  .band    { fill: rgba(232,163,61,.07); stroke: var(--amber-dim); }
+
+  /* ============ Triage ledger (terminal/report voice) ============ */
+  .ledger {
+    border-collapse: collapse;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .04em;
+    min-width: 480px; width: 100%;
+  }
+  .ledger th {
+    color: var(--amber); font-weight: 500;
+    font-size: var(--fs-mono-1); letter-spacing: .14em; text-transform: uppercase;
+    text-align: left; padding: 8px 18px 12px;
+    border-bottom: 1px solid var(--amber-dim);
+  }
+  .ledger td {
+    color: var(--read); padding: 11px 18px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .ledger td.num { font-variant-numeric: tabular-nums; color: var(--bone); }
+  .ledger .note { color: var(--faint); }
+  .ledger tfoot td {
+    color: var(--amber); border-bottom: none;
+    border-top: 1px solid var(--amber-dim); padding-top: 14px;
+  }
+
+  /* ============ What this demonstrates ============ */
+  .demo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .demo-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 24px 22px 26px;
+  }
+  .demo-tag {
+    font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--amber);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .demo-tag::before { content: "\25C6"; font-size: 8px; color: var(--amber-dim); }
+  .demo-item p { margin-top: 12px; color: var(--read); font-size: .94em; line-height: 1.6; }
+  .demo-item strong { color: var(--bone); font-weight: 600; }
+  @media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+
+  /* ============ Reveal on scroll ============ */
+  .reveal {
+    opacity: 0; transform: translateY(26px);
+    transition: opacity var(--d-reveal) var(--ease-out), transform var(--d-reveal) var(--ease-out);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ============ CTA + footer ============ */
+  .cta-block { padding: clamp(100px, 13vw, 180px) 0 40px; }
+  .cta-block h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(36px, 6.4vw, 76px);
+    line-height: 1.02; letter-spacing: -0.02em;
+    max-width: 16ch; text-wrap: balance;
+  }
+  .cta-block h2 em { font-style: normal; color: var(--amber); }
+  .cta-sub { margin-top: 20px; max-width: 58ch; color: var(--muted); }
+  .cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    margin-top: 40px;
+    font-family: var(--mono); font-size: var(--fs-mono-3); letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink); background: var(--amber);
+    padding: 18px 30px; border-radius: 99px;
+    transition: background var(--d-hover) var(--ease-out);
+  }
+  .cta .cta-arr { display: inline-block; transition: transform var(--d-micro) var(--ease-out); }
+  .cta:hover { background: #F2B95A; }
+  .cta:hover .cta-arr { transform: translate(3px, -3px); }
+  @media (max-width: 480px) {
+    .cta { font-size: var(--fs-mono-2); padding: 14px 20px; letter-spacing: .06em; }
+  }
+  .back-link {
+    display: inline-block; margin-top: 36px; margin-right: 26px;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted);
+    transition: color var(--d-hover) var(--ease-out);
+  }
+  .back-link:hover { color: var(--amber); }
+
+  footer {
+    margin-top: 80px;
+    border-top: 1px solid var(--line);
+    padding: 26px 0 34px;
+    display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
+    color: var(--faint);
+  }
+
+  /* ============ Reduced motion -- composed static state ============ */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .eyebrow, .cs-hero h1, .standfirst, .hero-meta { animation: none; opacity: 1; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .sec-head::after { transform: scaleX(1); transition: none; }
+    .nav-links a, .nav-links a::after, .cta, .cta .cta-arr, .back-link { transition: none; }
+  }
+</style>
+<noscript><style>
+  .reveal { opacity: 1; transform: none; }
+  .sec-head::after { transform: scaleX(1); }
+</style></noscript>
+</head>
+<body>
+
+<div id="progress" aria-hidden="true"></div>
+
+<header>
+  <div class="wrap nav">
+    <a class="mark" href="/">SP<b>&mdash;</b>2026</a>
+    <ul class="nav-links">
+      <li><a href="/">&larr; Back</a></li>
+      <li><a href="/#contact">Contact</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= HERO ================= -->
+  <section class="cs-hero">
+    <div class="wrap">
+      <p class="eyebrow">Case study &mdash; Method</p>
+      <h1>How I build with agents</h1>
+      <p class="standfirst">
+        The two case studies beside this one were built by multi-agent
+        pipelines I direct. So was this page. Agent leverage is real &mdash;
+        and so is drift, and most &quot;AI-assisted&quot; work ships the
+        drift. This is the method that keeps mine out: scripted
+        orchestration, adversarial review with four lenses, and a human who
+        signs every fix and every rejection. <em>Nothing ships ungated.</em>
+      </p>
+      <div class="hero-meta">
+        <span>Role<b>Design &amp; build: Sravan Pattabhi</b></span>
+        <span>Status<b>In production &mdash; this site is the artifact</b></span>
+        <span>Stack<b>Agent pipelines &middot; adversarial review &middot; human triage</b></span>
+        <span>Demonstrates<b>AI engineering &middot; Orchestration &middot; Judgment</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= AT A GLANCE ================= -->
+  <div class="statstrip">
+    <div class="wrap stats">
+      <div class="stat reveal">
+        <div class="stat-val">5&ndash;9</div>
+        <div class="stat-label">Agents per run</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">164</div>
+        <div class="stat-label">Adversarial findings triaged across six runs</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">4</div>
+        <div class="stat-label">Review lenses per panel</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">8/9</div>
+        <div class="stat-label">Agent results recovered from a killed run&apos;s journal</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">2</div>
+        <div class="stat-label">Private repos mined per case study</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">20&ndash;30</div>
+        <div class="stat-label">Minutes, wall clock &mdash; full case-study pipeline</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 01 THE CLAIM ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">01</span>
+        <span class="sec-num">01</span>
+        <span class="sec-label">The claim</span>
+      </div>
+      <h2 class="reveal">The raw output lies a little</h2>
+      <div class="prose">
+        <p class="reveal">
+          Every claim on the other two pages of this site traces to a test, a
+          gate, or a critique. This page owes you the same honesty about how
+          the pages themselves get made &mdash; because they were built by
+          crews of five to nine agents, and &quot;built by AI agents&quot; is,
+          in most portfolios, a warning label.
+        </p>
+        <p class="reveal">
+          The leverage is real. A scripted run can read two private repos,
+          draft copy from what it found, build a page, and review it from
+          four directions in the time it takes a human to write an outline.
+          The drift is just as real: agents fabricate numbers that sound
+          plausible, soften sharp claims into mush, praise their own output,
+          and wander off-brief the moment a task runs long. Most AI-assisted
+          work ships both halves &mdash; the speed and the drift &mdash; and
+          a careful reader can smell it in a paragraph.
+        </p>
+        <p class="reveal">
+          So the engineering problem was never &quot;use agents.&quot; It is
+          the same problem as Cairn&apos;s ghost postings &mdash; dead
+          listings a job scraper must catch &mdash; and Trading Lab&apos;s
+          flattering backtests &mdash; simulated profits that won&apos;t
+          survive live data: the raw output lies a little, and
+          the system around it has to stop that. My answer is the same in all
+          three places &mdash; <strong>gates</strong>. Deterministic
+          orchestration where determinism belongs, adversarial review before
+          anything ships, and one human &mdash; me &mdash; making every
+          judgment call, on the record.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 02 THE RUN ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">02</span>
+        <span class="sec-num">02</span>
+        <span class="sec-label">The run</span>
+      </div>
+      <h2 class="reveal">Anatomy of a run</h2>
+      <div class="prose">
+        <p class="reveal">
+          A typical run has five to nine agents in four phases, and the shape
+          matters more than the headcount.
+        </p>
+        <p class="reveal">
+          <strong>Scouts first.</strong> Before anything gets written,
+          researcher agents fan out in parallel &mdash; for a case study, two
+          analysts each deep-read a different private repo and return a
+          receipts file: every claim pre-verified against the code it
+          describes. The writers downstream never touch the repo; they touch
+          receipts. A writer with only receipts in context has no repo to
+          misremember &mdash; and any number that isn&apos;t in the receipts
+          file is a finding, not a fact, when the panel cross-checks.
+        </p>
+        <p class="reveal">
+          <strong>Then concept fan-outs, with assigned angles</strong>
+          &mdash; a fan-out being one brief handed to several agents at once.
+          When this site needed copy, three copywriter agents attacked the
+          same brief from deliberately different directions &mdash; a
+          minimalist, a vivid-imagery writer, a recruiter-optimizer &mdash;
+          and a judge agent scored every resulting option against explicit
+          criteria, killing cliches, duplicates, and anything
+          fabrication-adjacent. Parallel agents given the same prompt
+          converge on the same safe median; the assigned angles are what buy
+          actual range.
+        </p>
+        <p class="reveal">
+          <strong>Then one or two builders</strong> turn the winning concept
+          into the artifact. <strong>Then the adversarial review
+          panel</strong> &mdash; the part that earns the whole method, and
+          the next section. A fixer applies what survives.
+        </p>
+        <p class="reveal">
+          The division of labor is strict. Phases, fan-outs, and barriers
+          &mdash; sync points where every agent in a phase must finish before
+          the next phase starts &mdash; are scripted: the runs are Claude
+          Code agent workflows. A run is a program, not a conversation, and an agent
+          cannot skip review because it feels done. What stays human is
+          judgment: the brief, the scoring criteria, and every triage
+          decision &mdash; fix it, or reject it with a written reason &mdash;
+          on every finding.
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Run-shape diagram, scrolls horizontally on narrow screens">
+          <svg viewBox="0 0 1280 440" width="1280" height="440" style="min-width:1000px;width:100%;height:auto" role="img" aria-label="Run-shape diagram, left to right. A brief fans out to two parallel scout boxes, analyst repo A and analyst repo B. A dashed barrier line follows, then a fan-out to three writer boxes with assigned angles: minimalist, vivid imagery, recruiter-opt. A judge box notes all options in, kills cliches, duplicates, fabrication-adjacent. Then a builder, then a second barrier, then a full-height amber review gate band holding four stacked lens boxes: correctness, design, first-glance, sensitivity. Then a fixer, then ship. A bracket beneath the full pipeline through ship is labeled scripted: phases, fan-out, barriers. Amber diamonds at the brief, at the judge's criteria, and after the gate are jointly labeled human: brief, criteria, triage.">
+            <!-- BRIEF -->
+            <rect class="bx-hot" x="16" y="150" width="86" height="46" rx="3"></rect>
+            <text class="t-bone" x="59" y="177" font-size="11" text-anchor="middle" letter-spacing="1">BRIEF</text>
+
+            <!-- fan-out to scouts -->
+            <g class="ln-dim" stroke-width="1">
+              <line x1="102" y1="166" x2="146" y2="124"></line>
+              <polyline points="139,125 146,124 143,131"></polyline>
+              <line x1="102" y1="180" x2="146" y2="222"></line>
+              <polyline points="139,221 146,222 143,215"></polyline>
+            </g>
+
+            <!-- SCOUTS -->
+            <rect class="bx" x="150" y="94" width="168" height="52" rx="3"></rect>
+            <text class="t-bone" x="234" y="114" font-size="11" text-anchor="middle" letter-spacing="1">SCOUT</text>
+            <text class="t-muted" x="234" y="132" font-size="11" text-anchor="middle">analyst &middot; repo A</text>
+
+            <rect class="bx" x="150" y="200" width="168" height="52" rx="3"></rect>
+            <text class="t-bone" x="234" y="220" font-size="11" text-anchor="middle" letter-spacing="1">SCOUT</text>
+            <text class="t-muted" x="234" y="238" font-size="11" text-anchor="middle">analyst &middot; repo B</text>
+
+            <!-- barrier 1 -->
+            <line class="ln-dim" x1="348" y1="62" x2="348" y2="300" stroke-width="1" stroke-dasharray="4 6"></line>
+            <text class="t-faint" x="348" y="48" font-size="11" text-anchor="middle" letter-spacing="2">BARRIER</text>
+
+            <g class="ln-dim" stroke-width="1">
+              <line x1="318" y1="120" x2="344" y2="120"></line>
+              <line x1="318" y1="226" x2="344" y2="226"></line>
+              <line x1="352" y1="94" x2="376" y2="94"></line>
+              <polyline points="371,90 376,94 371,98"></polyline>
+              <line x1="352" y1="172" x2="376" y2="172"></line>
+              <polyline points="371,168 376,172 371,176"></polyline>
+              <line x1="352" y1="250" x2="376" y2="250"></line>
+              <polyline points="371,246 376,250 371,254"></polyline>
+            </g>
+
+            <!-- WRITERS -->
+            <rect class="bx" x="380" y="70" width="180" height="48" rx="3"></rect>
+            <text class="t-bone" x="398" y="90" font-size="11" letter-spacing="1">WRITER</text>
+            <text class="t-muted" x="398" y="107" font-size="11">minimalist</text>
+
+            <rect class="bx" x="380" y="148" width="180" height="48" rx="3"></rect>
+            <text class="t-bone" x="398" y="168" font-size="11" letter-spacing="1">WRITER</text>
+            <text class="t-muted" x="398" y="185" font-size="11">vivid imagery</text>
+
+            <rect class="bx" x="380" y="226" width="180" height="48" rx="3"></rect>
+            <text class="t-bone" x="398" y="246" font-size="11" letter-spacing="1">WRITER</text>
+            <text class="t-muted" x="398" y="263" font-size="11">recruiter-opt</text>
+
+            <!-- writers converge to JUDGE -->
+            <g class="ln-dim" stroke-width="1" fill="none">
+              <path d="M 560 94 C 582 94, 584 150, 600 164"></path>
+              <line x1="560" y1="172" x2="600" y2="172"></line>
+              <path d="M 560 250 C 582 250, 584 194, 600 180"></path>
+              <polyline points="594,160 601,165 596,169"></polyline>
+              <polyline points="595,168 600,172 595,176"></polyline>
+              <polyline points="596,175 601,179 594,184"></polyline>
+            </g>
+
+            <!-- JUDGE -->
+            <rect class="bx" x="604" y="148" width="104" height="48" rx="3"></rect>
+            <text class="t-bone" x="656" y="176" font-size="11" text-anchor="middle" letter-spacing="1">JUDGE</text>
+            <g font-size="11" text-anchor="middle">
+              <text class="t-faint" x="656" y="300">all options in</text>
+              <text class="t-faint" x="656" y="316">kills cliches, duplicates,</text>
+              <text class="t-faint" x="656" y="332">fabrication-adjacent</text>
+            </g>
+            <line class="ln-dim" x1="656" y1="200" x2="656" y2="286" stroke-width="1" stroke-dasharray="2 5"></line>
+
+            <!-- JUDGE -> BUILDER -->
+            <g class="ln-dim" stroke-width="1">
+              <line x1="708" y1="172" x2="744" y2="172"></line>
+              <polyline points="739,168 744,172 739,176"></polyline>
+            </g>
+
+            <!-- BUILDER -->
+            <rect class="bx" x="748" y="148" width="112" height="48" rx="3"></rect>
+            <text class="t-bone" x="804" y="176" font-size="11" text-anchor="middle" letter-spacing="1">BUILDER</text>
+
+            <!-- barrier 2 -->
+            <line class="ln-dim" x1="884" y1="62" x2="884" y2="300" stroke-width="1" stroke-dasharray="4 6"></line>
+            <text class="t-faint" x="884" y="48" font-size="11" text-anchor="middle" letter-spacing="2">BARRIER</text>
+
+            <!-- BUILDER -> gate -->
+            <g class="ln-dim" stroke-width="1">
+              <line x1="860" y1="172" x2="896" y2="172"></line>
+              <polyline points="891,168 896,172 891,176"></polyline>
+            </g>
+
+            <!-- REVIEW GATE band -->
+            <rect class="band" x="900" y="44" width="172" height="276" rx="3"></rect>
+            <text class="t-amber" x="986" y="68" font-size="11" text-anchor="middle" letter-spacing="2">REVIEW GATE</text>
+            <g font-size="11" text-anchor="middle">
+              <rect class="bx" x="916" y="82" width="140" height="36" rx="3"></rect>
+              <text class="t-bone" x="986" y="104">correctness</text>
+              <rect class="bx" x="916" y="140" width="140" height="36" rx="3"></rect>
+              <text class="t-bone" x="986" y="162">design</text>
+              <rect class="bx" x="916" y="198" width="140" height="36" rx="3"></rect>
+              <text class="t-bone" x="986" y="220">first-glance</text>
+              <rect class="bx" x="916" y="256" width="140" height="36" rx="3"></rect>
+              <text class="t-bone" x="986" y="278">sensitivity</text>
+            </g>
+
+            <!-- gate -> FIXER -> SHIP -->
+            <g class="ln-dim" stroke-width="1">
+              <line x1="1072" y1="172" x2="1100" y2="172"></line>
+              <polyline points="1095,168 1100,172 1095,176"></polyline>
+              <line x1="1184" y1="172" x2="1204" y2="172"></line>
+              <polyline points="1199,168 1204,172 1199,176"></polyline>
+            </g>
+            <rect class="bx" x="1104" y="148" width="80" height="48" rx="3"></rect>
+            <text class="t-bone" x="1144" y="176" font-size="11" text-anchor="middle" letter-spacing="1">FIXER</text>
+            <rect class="bx-hot" x="1208" y="148" width="64" height="48" rx="3"></rect>
+            <text class="t-amber" x="1240" y="176" font-size="11" text-anchor="middle" letter-spacing="1">SHIP</text>
+
+            <!-- scripted bracket -->
+            <g class="ln-dim" stroke-width="1">
+              <line x1="16" y1="368" x2="1272" y2="368"></line>
+              <line x1="16" y1="368" x2="16" y2="360"></line>
+              <line x1="1272" y1="368" x2="1272" y2="360"></line>
+            </g>
+            <text class="t-faint" x="644" y="390" font-size="11" text-anchor="middle" letter-spacing="1">scripted: phases &middot; fan-out &middot; barriers</text>
+
+            <!-- human diamonds -->
+            <line class="ln-amb" x1="59" y1="412" x2="1088" y2="412" stroke-width="1" stroke-dasharray="2 6"></line>
+            <path class="t-amber" d="M 59 406 L 65 412 L 59 418 L 53 412 Z"></path>
+            <path class="t-amber" d="M 656 406 L 662 412 L 656 418 L 650 412 Z"></path>
+            <path class="t-amber" d="M 1088 406 L 1094 412 L 1088 418 L 1082 412 Z"></path>
+            <text class="t-amber" x="1272" y="434" font-size="11" letter-spacing="1" text-anchor="end">human: brief &middot; criteria &middot; triage</text>
+          </svg>
+        </div>
+        <figcaption>Agents execute inside the shape; the shape is a script; the judgment calls are mine.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 03 THE REVIEW PANEL ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">03</span>
+        <span class="sec-num">03</span>
+        <span class="sec-label">The review panel</span>
+      </div>
+      <h2 class="reveal">Four lenses, and the right to be overruled</h2>
+      <div class="prose">
+        <p class="reveal">
+          Four reviewer agents run in parallel against the built artifact,
+          each with a distinct lens and an explicit mandate to find
+          problems, not to approve.
+        </p>
+        <ul class="reveal">
+          <li><strong>Correctness</strong> &mdash; reads the code: tag
+          balance, broken scripts, dead anchors, the defects a linter should
+          catch and a tired human skims past.</li>
+          <li><strong>Design</strong> &mdash; checks system consistency:
+          tokens, spacing, type scale, whether the page still belongs to its
+          siblings.</li>
+          <li><strong>First-glance</strong> &mdash; roleplays a cold reader
+          with a hiring manager&apos;s patience and no obligation to finish,
+          hunting comprehension stalls &mdash; the sentence where a senior
+          engineer stops trusting the page.</li>
+          <li><strong>Sensitivity</strong> &mdash; audits for discretion
+          against an explicit never-publish list, because a portfolio is a
+          public surface over private work.</li>
+        </ul>
+        <p class="reveal">
+          Every finding is triaged by me: fixed, or rejected with a written
+          reason. Both verdicts matter, and two incidents show the gates
+          biting in both directions.
+        </p>
+        <p class="reveal">
+          The sensitivity reviewer once over-applied its rules and scrubbed
+          accurate career facts &mdash; a real team name &mdash; off the
+          resume-facing pages. Flagged correctly by its own lights; wrong
+          anyway. A portfolio that contradicts your resume is worse than the
+          risk that rule guarded, so I overruled the finding and restored the
+          facts, with the reason written down. <strong>Automation flags;
+          humans decide.</strong>
+        </p>
+        <p class="reveal">
+          The design reviewer caught the homepage schematic being framed as
+          &quot;live telemetry &mdash; not a mockup&quot; when it is a
+          scripted animation. A senior engineer would clock the loop in
+          seconds and distrust everything after it. The copy shipped as
+          &quot;drawn in code&quot; instead. The honesty this site trades on
+          is not a vibe &mdash; it is a review lens with findings, and this
+          one drew blood before launch.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 04 RESILIENCE ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">04</span>
+        <span class="sec-num">04</span>
+        <span class="sec-label">Resilience</span>
+      </div>
+      <h2 class="reveal">A stray click costs minutes, not the afternoon</h2>
+      <div class="prose">
+        <p class="reveal">
+          One nine-agent run died mid-flight to a stray click. The afternoon
+          didn&apos;t.
+        </p>
+        <p class="reveal">
+          Every agent result is journaled the moment it lands &mdash; the
+          orchestration treats agent output the way Trading Lab treats
+          trades: append-only records written at the time, never
+          reconstructed from memory afterward. Eight of nine results came
+          straight back out of the journal, and only the final stage re-ran.
+          Total cost of the kill: minutes.
+        </p>
+        <p class="reveal">
+          That property is designed, not lucky. Checkpointed orchestration
+          means a run is resumable at every phase barrier; a crash, a rate
+          limit, or a fat-fingered interrupt costs the stage in flight, never
+          the run. It is the same instinct as the golden masters in Cairn
+          &mdash; snapshot tests that pin a system&apos;s output
+          byte-for-byte &mdash; and the append-only event log in Trading Lab:
+          <strong>if the work isn&apos;t journaled, it didn&apos;t happen; if
+          it is, you never pay for it twice.</strong>
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Kill-and-resume timeline, scrolls horizontally on narrow screens">
+          <svg viewBox="0 0 980 340" width="980" height="340" style="min-width:860px;width:100%;height:auto" role="img" aria-label="Kill-and-resume timeline. Top track: nine agent boxes completing left to right, the ninth dashed and incomplete. Each of the first eight drops an amber diamond tick into an append-only journal band below as its result lands. A red X between the eighth and ninth boxes is labeled stray click, run killed. A resume arrow rises from the journal band, holding eight amber ticks, into a single re-run box labeled final stage only, 8 of 9 recovered from journal. An annotation reads cost: minutes, not the afternoon.">
+            <!-- agent boxes -->
+            <g font-size="10" text-anchor="middle">
+              <rect class="bx" x="24" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-muted" x="63" y="57">A1</text>
+              <rect class="bx" x="128" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-muted" x="167" y="57">A2</text>
+              <rect class="bx" x="232" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-muted" x="271" y="57">A3</text>
+              <rect class="bx" x="336" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-muted" x="375" y="57">A4</text>
+              <rect class="bx" x="440" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-muted" x="479" y="57">A5</text>
+              <rect class="bx" x="544" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-muted" x="583" y="57">A6</text>
+              <rect class="bx" x="648" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-muted" x="687" y="57">A7</text>
+              <rect class="bx" x="752" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-muted" x="791" y="57">A8</text>
+              <rect class="bx-off" x="856" y="36" width="78" height="34" rx="3"></rect>
+              <text class="t-faint" x="895" y="57">A9</text>
+            </g>
+
+            <!-- kill marker -->
+            <g class="ln-red" stroke-width="1.4">
+              <line x1="836" y1="46" x2="850" y2="60"></line>
+              <line x1="850" y1="46" x2="836" y2="60"></line>
+            </g>
+            <text class="t-red" x="934" y="20" font-size="10" text-anchor="end">stray click &middot; run killed</text>
+
+            <!-- drop lines into journal -->
+            <g class="ln-dim" stroke-width="1" stroke-dasharray="2 4">
+              <line x1="63" y1="70" x2="63" y2="140"></line>
+              <line x1="167" y1="70" x2="167" y2="140"></line>
+              <line x1="271" y1="70" x2="271" y2="140"></line>
+              <line x1="375" y1="70" x2="375" y2="140"></line>
+              <line x1="479" y1="70" x2="479" y2="140"></line>
+              <line x1="583" y1="70" x2="583" y2="140"></line>
+              <line x1="687" y1="70" x2="687" y2="140"></line>
+              <line x1="791" y1="70" x2="791" y2="140"></line>
+            </g>
+
+            <!-- journal band -->
+            <rect class="band" x="24" y="142" width="884" height="56" rx="3"></rect>
+            <text class="t-amber" x="38" y="162" font-size="10" letter-spacing="2">JOURNAL &middot; APPEND-ONLY</text>
+            <g class="t-amber">
+              <path d="M 63 179 L 68 184 L 63 189 L 58 184 Z"></path>
+              <path d="M 167 179 L 172 184 L 167 189 L 162 184 Z"></path>
+              <path d="M 271 179 L 276 184 L 271 189 L 266 184 Z"></path>
+              <path d="M 375 179 L 380 184 L 375 189 L 370 184 Z"></path>
+              <path d="M 479 179 L 484 184 L 479 189 L 474 184 Z"></path>
+              <path d="M 583 179 L 588 184 L 583 189 L 578 184 Z"></path>
+              <path d="M 687 179 L 692 184 L 687 189 L 682 184 Z"></path>
+              <path d="M 791 179 L 796 184 L 791 189 L 786 184 Z"></path>
+            </g>
+
+            <!-- resume arrow into re-run -->
+            <path class="ln-amb" d="M 470 200 C 490 234, 516 262, 552 272" stroke-width="1.2"></path>
+            <polyline class="ln-amb" points="544,267 553,272 545,276" stroke-width="1.2"></polyline>
+            <rect class="bx-hot" x="560" y="246" width="300" height="56" rx="3"></rect>
+            <text class="t-bone" x="580" y="270" font-size="11" letter-spacing="1">RE-RUN</text>
+            <text class="t-muted" x="580" y="288" font-size="10">final stage only &middot; 8/9 recovered from journal</text>
+
+            <!-- cost annotation -->
+            <text class="t-muted" x="934" y="270" font-size="10" text-anchor="end">cost: minutes,</text>
+            <text class="t-muted" x="934" y="286" font-size="10" text-anchor="end">not the afternoon</text>
+          </svg>
+        </div>
+        <figcaption>Results are journaled as they land &mdash; an interrupted run resumes from the last barrier.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 05 THE RECEIPTS ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">05</span>
+        <span class="sec-num">05</span>
+        <span class="sec-label">The receipts</span>
+      </div>
+      <h2 class="reveal">What six runs cost, and what they bought</h2>
+      <div class="prose">
+        <p class="reveal">
+          Numbers over adjectives. Across all six runs that built this site
+          and its case studies, the adversarial panels returned 164 findings
+          &mdash; the per-run counts are in the ledger below &mdash; every
+          one triaged, fixed or rejected with a written reason, before
+          anything went live. Runs are five to nine agents and burn hundreds
+          of thousands to roughly a million tokens of agent work each. A
+          full case-study pipeline &mdash; repo mining to draft to build to
+          four-lens review to fix &mdash; completes in roughly 20 to 30
+          minutes of wall clock. The homepage redesign, the largest run, took
+          about two hours.
+        </p>
+        <p class="reveal">
+          Honest accounting cuts both ways: those minutes buy drafts and
+          defect lists, not judgment. The briefs, the criteria, and 164
+          triage decisions are human time, and they are the part that makes
+          the rest worth anything.
+        </p>
+        <p class="reveal">
+          This isn&apos;t a side-project trick, either. The day job is
+          building AI-agent skills on MCP servers at Oracle. The stance
+          doesn&apos;t change: <strong>I direct, agents execute, gates
+          decide.</strong>
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Triage ledger table, scrolls horizontally on narrow screens">
+          <table class="ledger">
+            <thead>
+              <tr>
+                <th scope="col">Run</th>
+                <th scope="col">Findings</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>run-01</td>
+                <td class="num">34</td>
+              </tr>
+              <tr>
+                <td>run-02</td>
+                <td class="num">17</td>
+              </tr>
+              <tr>
+                <td>run-03</td>
+                <td class="num">23</td>
+              </tr>
+              <tr>
+                <td>run-04 <span class="note">&middot; ~2h &middot; homepage redesign</span></td>
+                <td class="num">41</td>
+              </tr>
+              <tr>
+                <td>run-05</td>
+                <td class="num">30</td>
+              </tr>
+              <tr>
+                <td>run-06</td>
+                <td class="num">19</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2">TOTAL &middot; 164 findings &middot; 164 triaged &middot; 0 shipped unreviewed</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <figcaption>Six runs &mdash; every finding fixed or rejected in writing.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 06 NOTHING SHIPS UNGATED ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">06</span>
+        <span class="sec-num">06</span>
+        <span class="sec-label">The test</span>
+      </div>
+      <h2 class="reveal">This page went through the same pipeline</h2>
+      <div class="prose">
+        <p class="reveal">
+          The standfirst&apos;s promise started as practice, not copy.
+          Trading Lab&apos;s gate keeps saying FAIL until a strategy earns
+          PASS. Cairn&apos;s golden masters let no agent land a byte the
+          suite doesn&apos;t bless. This method is where that discipline
+          comes from &mdash; the gates were the practice first, and the
+          systems inherited it.
+        </p>
+        <p class="reveal">
+          Which leaves one obvious question: who reviewed the page about the
+          review process? The same pipeline. Scouts mined the build history
+          of the other two case studies, angled writers drafted, a builder
+          built, and four reviewer agents went at this page with the exact
+          lenses described above &mdash; including the sensitivity auditor,
+          which had opinions. I triaged the findings, applied what survived,
+          and wrote down every rejection.
+        </p>
+        <p class="reveal">
+          A page produced by the pipeline can&apos;t certify the pipeline
+          &mdash; that&apos;s the same conflict of interest the gates exist
+          to catch. So don&apos;t take this page&apos;s word for it. A run is
+          twenty to thirty minutes; I&apos;ll do one in front of you.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 07 WHAT THIS DEMONSTRATES ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">07</span>
+        <span class="sec-num">07</span>
+        <span class="sec-label">What this demonstrates</span>
+      </div>
+      <h2 class="reveal">Three claims, receipts above</h2>
+      <div class="demo-grid">
+        <div class="demo-item reveal">
+          <span class="demo-tag">AI engineering</span>
+          <p><strong>Multi-agent pipelines as production tooling</strong>
+          &mdash; scouts return receipts files so writers draft only
+          pre-verified claims, fan-outs run on assigned angles instead of a
+          shared prompt, and a judge scores every option against explicit
+          criteria. The same craft as the day job: AI-agent skills on MCP
+          servers at Oracle.</p>
+        </div>
+        <div class="demo-item reveal">
+          <span class="demo-tag">Orchestration</span>
+          <p><strong>Scripted phases, fan-outs, and barriers</strong>
+          &mdash; every result journaled append-only the moment it lands, so
+          an interrupted run resumes from the last barrier instead of
+          restarting. The homepage redesign, the largest run, finished in
+          about two hours.</p>
+        </div>
+        <div class="demo-item reveal">
+          <span class="demo-tag">Judgment</span>
+          <p><strong>Every verdict on the record</strong> &mdash; each
+          finding fixed or rejected with a written reason, including
+          overruling a technically-correct sensitivity flag and shipping the
+          fix that killed a flattering line.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CTA ================= -->
+  <section class="cta-block">
+    <div class="wrap">
+      <h2 class="reveal">Want to see a <em>run live?</em></h2>
+      <p class="cta-sub reveal">
+        A full case-study pipeline completes in 20 to 30 minutes &mdash;
+        short enough to watch end to end on a screen-share, review panel and
+        triage included.
+      </p>
+      <a class="cta reveal" href="mailto:sravan.pattabhi97@gmail.com">
+        sravan.pattabhi97@gmail.com <span class="cta-arr" aria-hidden="true">&nearr;</span>
+      </a>
+      <br>
+      <a class="back-link reveal" href="/">&larr; Back to the portfolio</a>
+      <a class="back-link reveal" href="cairn.html">Built this way: Cairn &rarr;</a>
+      <a class="back-link reveal" href="trading-lab.html">Built this way: Trading Lab &rarr;</a>
+      <footer>
+        <span>&copy; 2026 Sravan Pattabhi</span>
+        <span>Case study &mdash; Method &mdash; one HTML file</span>
+      </footer>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var mmR = window.matchMedia("(prefers-reduced-motion: reduce)");
+  function red() { return mmR.matches; }
+
+  /* ================= SCROLL PROGRESS HAIRLINE ================= */
+  var bar = document.getElementById("progress");
+  var ticking = false;
+  function paint() {
+    ticking = false;
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var y = window.scrollY || h.scrollTop || 0;
+    if (bar) bar.style.width = (max > 0 ? (y / max) * 100 : 0) + "%";
+  }
+  function onScroll() {
+    if (!ticking) { ticking = true; requestAnimationFrame(paint); }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  paint();
+
+  /* ================= REVEAL ON SCROLL ================= */
+  var revealEls = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window && !red()) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("in");
+        io.unobserve(en.target);
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add("in"); });
+  }
+
+  /* live reduced-motion toggle: compose the static state immediately */
+  function applyRed() {
+    if (!red()) return;
+    revealEls.forEach(function (el) { el.classList.add("in"); });
+  }
+  if (mmR.addEventListener) mmR.addEventListener("change", applyRed);
+})();
+</script>
+
+</body>
+</html>
