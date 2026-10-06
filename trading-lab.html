@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trading Lab &mdash; Sravan Pattabhi</title>
+  <meta name="description" content="Case study: Trading Lab, a trading system forbidden from touching real money until it earns it &mdash; and whose own reports admit its strategies lose to buy-and-hold. That's not the failure case. That's the product working.">
+  <meta name="author" content="Sravan Pattabhi">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0C0E13">
+  <meta property="og:title" content="Trading Lab &mdash; Sravan Pattabhi">
+  <meta property="og:description" content="Case study: Trading Lab, a trading system forbidden from touching real money until it earns it &mdash; and whose own reports admit its strategies lose to buy-and-hold. That's the product working.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://sravanpattabhi.github.io/trading-lab.html">
+  <meta property="og:image" content="https://sravanpattabhi.github.io/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://sravanpattabhi.github.io/trading-lab.html">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* ============ Tokens -- same committed dark world as the main site ============ */
+  :root {
+    --ink:      #0C0E13;
+    --surface:  #151823;
+    --raised:   #1B1F2E;
+    --bone:     #EAE5D9;
+    --read:     #AEB4C6;
+    --muted:    #8A90A5;
+    --faint:    #565C70;
+    --line:     #262B3A;
+    --amber:    #E8A33D;
+    --amber-dim:#8A6526;
+    --red:      #D96A55;
+    --red-dim:  #7A3A2E;
+
+    --display: "Bricolage Grotesque", "Arial Narrow", Impact, sans-serif;
+    --body:    "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono:    "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+
+    --ease-out:   cubic-bezier(.19, 1, .22, 1);
+    --ease-inout: cubic-bezier(.65, 0, .35, 1);
+    --d-micro: .18s; --d-hover: .42s; --d-reveal: .8s;
+
+    --fs-mono-1: 11px; --fs-mono-2: 12px; --fs-mono-3: 13px;
+
+    --pad: clamp(20px, 5vw, 64px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--bone);
+    font-family: var(--body);
+    font-size: clamp(17px, 1.8vw, 18px);
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* film grain -- carried over from the main site */
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: 80;
+    pointer-events: none; opacity: .05;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="140" height="140"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="140" height="140" filter="url(%23n)"/%3E%3C/svg%3E');
+  }
+
+  ::selection { background: var(--amber); color: var(--ink); }
+
+  a { color: inherit; text-decoration: none; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
+
+  /* ============ Scroll progress hairline ============ */
+  #progress {
+    position: fixed; top: 0; left: 0; height: 2px; width: 0;
+    background: var(--amber); z-index: 60;
+    box-shadow: 0 0 8px rgba(232,163,61,.55);
+  }
+
+  /* ============ Nav ============ */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    background: color-mix(in srgb, var(--ink) 82%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .mark { font-family: var(--mono); font-size: var(--fs-mono-3); letter-spacing: .08em; color: var(--bone); }
+  .mark b { color: var(--amber); font-weight: 500; }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    position: relative; padding: 4px 0;
+    transition: color var(--d-hover) var(--ease-out);
+  }
+  .nav-links a::after {
+    content: ""; position: absolute; left: 0; bottom: 0;
+    width: 100%; height: 1px; background: var(--amber);
+    transform: scaleX(0); transform-origin: right;
+    transition: transform var(--d-hover) var(--ease-out);
+  }
+  .nav-links a:hover { color: var(--bone); }
+  .nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+
+  /* ============ Hero ============ */
+  .cs-hero { padding: 170px 0 72px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
+    text-transform: uppercase; color: var(--amber);
+    display: inline-flex; align-items: center; gap: 10px;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .1s forwards;
+  }
+  .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--amber); }
+
+  .cs-hero h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(42px, 8vw, 96px);
+    line-height: .98;
+    letter-spacing: -0.02em;
+    margin-top: 22px;
+    max-width: 14ch;
+    text-wrap: balance;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .22s forwards;
+  }
+
+  .standfirst {
+    margin-top: 32px;
+    max-width: 68ch;
+    font-size: clamp(18px, 2.2vw, 22px);
+    line-height: 1.55;
+    color: var(--muted);
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .36s forwards;
+  }
+  .standfirst em { color: var(--bone); font-style: normal; }
+
+  .hero-meta {
+    margin-top: 44px;
+    display: flex; gap: 40px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .5s forwards;
+  }
+  .hero-meta span b { color: var(--muted); font-weight: 400; display: block; margin-top: 4px; text-transform: none; }
+
+  @keyframes fadeup {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ Stat strip ============ */
+  .statstrip {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    padding: 40px 0;
+  }
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 22px; }
+  .stat-val {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(28px, 3.6vw, 44px); line-height: 1;
+    color: var(--bone); letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-val .suf { color: var(--amber); }
+  .stat-label {
+    font-family: var(--mono); font-size: var(--fs-mono-1); text-transform: uppercase;
+    letter-spacing: .12em; color: var(--faint); margin-top: 10px; line-height: 1.5;
+  }
+  @media (max-width: 900px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ============ Sections ============ */
+  section.cs { padding: clamp(80px, 10vw, 140px) 0 0; }
+
+  .sec-head {
+    position: relative;
+    display: flex; align-items: baseline; gap: 18px;
+    padding-bottom: 18px; margin-bottom: 34px;
+  }
+  .sec-head::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: var(--line);
+    transform: scaleX(0); transform-origin: left;
+  }
+  .sec-head.in::after { transform: scaleX(1); transition: transform var(--d-reveal) var(--ease-inout) .15s; }
+  .sec-num {
+    font-family: var(--mono); font-size: var(--fs-mono-3); color: var(--amber); letter-spacing: .1em;
+  }
+  .sec-label {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
+    text-transform: uppercase; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .sec-label::before { content: ""; width: 22px; height: 1px; background: var(--amber); }
+  .ghost {
+    position: absolute; right: 0; bottom: -6px;
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(80px, 13vw, 170px); line-height: 1;
+    color: transparent; -webkit-text-stroke: 1px var(--line);
+    pointer-events: none; user-select: none; z-index: -1;
+  }
+
+  .cs h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(30px, 4.6vw, 54px);
+    line-height: 1.06; letter-spacing: -0.015em;
+    max-width: 24ch;
+    text-wrap: balance;
+    margin-bottom: 30px;
+  }
+
+  .prose { max-width: 68ch; }
+  .prose p { color: var(--read); }
+  .prose p + p { margin-top: 1.35em; }
+  .prose strong { color: var(--bone); font-weight: 600; }
+  .prose em { color: var(--bone); font-style: italic; }
+  .prose code {
+    font-family: var(--mono); font-size: .82em;
+    color: var(--bone);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 2px 6px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .prose ul { list-style: none; margin: 1.35em 0; }
+  .prose li {
+    color: var(--read);
+    position: relative; padding-left: 24px;
+  }
+  .prose li + li { margin-top: .65em; }
+  .prose li::before {
+    content: "\25C6"; position: absolute; left: 2px; top: .5em;
+    font-size: 8px; line-height: 1; color: var(--amber-dim);
+  }
+
+  /* ============ Figures (schematic voice) ============ */
+  .viz {
+    margin: 44px 0 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .viz-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px; }
+  .viz-scroll:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
+  .viz svg { display: block; }
+  @media (max-width: 700px) {
+    .viz { position: relative; }
+    .viz-scroll::after {
+      content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 36px;
+      pointer-events: none;
+      background: linear-gradient(to right, transparent, var(--surface));
+    }
+    .viz figcaption::after { content: " \00B7 drag \2192"; color: var(--faint); }
+  }
+  .viz figcaption, .quote figcaption {
+    font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .06em;
+    color: var(--faint);
+    border-top: 1px solid var(--line);
+    padding: 10px 16px;
+  }
+  .viz figcaption::before, .quote figcaption::before {
+    content: "\25C6"; color: var(--amber-dim); margin-right: 10px; font-size: 8px;
+  }
+
+  /* svg text voice */
+  .viz text { font-family: var(--mono); }
+  .t-bone  { fill: var(--bone); }
+  .t-muted { fill: var(--muted); }
+  .t-faint { fill: var(--faint); }
+  .t-amber { fill: var(--amber); }
+  .t-dim   { fill: var(--amber-dim); }
+  .t-red   { fill: var(--red); }
+  .bx      { fill: var(--ink); stroke: var(--line); }
+  .bx-hot  { fill: var(--ink); stroke: var(--amber-dim); }
+  .bx-off  { fill: var(--ink); stroke: var(--faint); stroke-dasharray: 4 4; }
+  .ln      { stroke: var(--line); fill: none; }
+  .ln-dim  { stroke: var(--faint); fill: none; }
+  .ln-amb  { stroke: var(--amber-dim); fill: none; }
+  .ln-red  { stroke: var(--red); fill: none; }
+  .band    { fill: rgba(232,163,61,.07); stroke: var(--amber-dim); }
+  .band-red{ fill: rgba(217,106,85,.07); stroke: var(--red-dim); }
+
+  /* ============ Quote card (typographic) ============ */
+  .quote {
+    margin: 44px 0 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .quote-inner { padding: clamp(28px, 5vw, 52px) clamp(20px, 4vw, 48px); }
+  .quote-line {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(26px, 4.4vw, 46px);
+    line-height: 1.1; letter-spacing: -0.015em;
+    color: var(--bone); max-width: 20ch; text-wrap: balance;
+  }
+  .quote-line em { font-style: normal; color: var(--amber); }
+  .personas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+  .persona {
+    font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 99px;
+    padding: 6px 12px;
+  }
+  .persona b { color: var(--amber-dim); font-weight: 400; margin-left: 8px; }
+
+  /* ============ Terminal mock ============ */
+  .term {
+    font-family: var(--mono); font-size: var(--fs-mono-3); line-height: 1.85;
+    letter-spacing: .02em;
+    color: var(--read);
+    white-space: pre; min-width: 620px;
+  }
+  .tm-faint  { color: var(--faint); }
+  .tm-muted  { color: var(--muted); }
+  .tm-bone   { color: var(--bone); }
+  .tm-amber  { color: var(--amber); }
+  .tm-verdict{ color: var(--ink); background: var(--amber); padding: 1px 7px; border-radius: 2px; }
+  .tcaret {
+    display: inline-block; width: 7px; height: 12px;
+    background: var(--amber); vertical-align: baseline;
+    animation: blink 1.1s steps(2, start) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ============ Reveal on scroll ============ */
+  .reveal {
+    opacity: 0; transform: translateY(26px);
+    transition: opacity var(--d-reveal) var(--ease-out), transform var(--d-reveal) var(--ease-out);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ============ CTA + footer ============ */
+  .cta-block { padding: clamp(100px, 13vw, 180px) 0 40px; }
+  .cta-block h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(36px, 6.4vw, 76px);
+    line-height: 1.02; letter-spacing: -0.02em;
+    max-width: 16ch; text-wrap: balance;
+  }
+  .cta-block h2 em { font-style: normal; color: var(--amber); }
+  .cta-sub { margin-top: 20px; max-width: 58ch; color: var(--muted); }
+  .cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    margin-top: 40px;
+    font-family: var(--mono); font-size: var(--fs-mono-3); letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink); background: var(--amber);
+    padding: 18px 30px; border-radius: 99px;
+    transition: background var(--d-hover) var(--ease-out);
+  }
+  .cta .cta-arr { display: inline-block; transition: transform var(--d-micro) var(--ease-out); }
+  .cta:hover { background: #F2B95A; }
+  .cta:hover .cta-arr { transform: translate(3px, -3px); }
+  @media (max-width: 480px) {
+    .cta { font-size: var(--fs-mono-2); padding: 14px 20px; letter-spacing: .06em; }
+  }
+  .back-link {
+    display: inline-block; margin-top: 36px;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted);
+    transition: color var(--d-hover) var(--ease-out);
+  }
+  .back-link:hover { color: var(--amber); }
+
+  footer {
+    margin-top: 80px;
+    border-top: 1px solid var(--line);
+    padding: 26px 0 34px;
+    display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
+    color: var(--faint);
+  }
+
+  /* ============ Reduced motion -- composed static state ============ */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .eyebrow, .cs-hero h1, .standfirst, .hero-meta { animation: none; opacity: 1; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .sec-head::after { transform: scaleX(1); transition: none; }
+    .tcaret { animation: none; }
+    .nav-links a, .nav-links a::after, .cta, .cta .cta-arr, .back-link { transition: none; }
+  }
+</style>
+<noscript><style>
+  .reveal { opacity: 1; transform: none; }
+  .sec-head::after { transform: scaleX(1); }
+</style></noscript>
+</head>
+<body>
+
+<div id="progress" aria-hidden="true"></div>
+
+<header>
+  <div class="wrap nav">
+    <a class="mark" href="/">SP<b>&mdash;</b>2026</a>
+    <ul class="nav-links">
+      <li><a href="/">&larr; Back</a></li>
+      <li><a href="/#contact">Contact</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= HERO ================= -->
+  <section class="cs-hero">
+    <div class="wrap">
+      <p class="eyebrow">Case study &mdash; Trading Lab</p>
+      <h1>No real money until it earns it</h1>
+      <p class="standfirst">
+        I built a trading system whose own reports admit its strategies lose
+        to buy-and-hold. <em>That&apos;s not the failure case. That&apos;s
+        the product working.</em>
+      </p>
+      <div class="hero-meta">
+        <span>Role<b>Design &amp; build: Sravan Pattabhi</b></span>
+        <span>Status<b>Private repo &mdash; paper trading in progress</b></span>
+        <span>Stack<b>Python &middot; uv &middot; custom engine</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= AT A GLANCE ================= -->
+  <div class="statstrip">
+    <div class="wrap stats">
+      <div class="stat reveal">
+        <div class="stat-val">$0</div>
+        <div class="stat-label">Real money traded &mdash; by construction</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">&minus;15<span class="suf">%</span></div>
+        <div class="stat-label">Loss from peak that triggers an automatic halt</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">108</div>
+        <div class="stat-label">Tests &mdash; one proves backtest &equiv; paper</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">1</div>
+        <div class="stat-label">SimulationCore for backtest and paper</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">~500</div>
+        <div class="stat-label">Lines of simulation engine, custom-built</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">5</div>
+        <div class="stat-label">Trader personas in the adversarial review</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 01 THE PREMISE ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">01</span>
+        <span class="sec-num">01</span>
+        <span class="sec-label">The premise</span>
+      </div>
+      <h2 class="reveal">Every backtest is a liar</h2>
+      <div class="prose">
+        <p class="reveal">
+          Hobbyist trading systems die the same death: a backtest &mdash; a
+          replay of a strategy&apos;s rules over historical data &mdash; that
+          flatters. Look-ahead bias (trading on information the strategy
+          couldn&apos;t have had yet), costless, perfect fills (order
+          executions at prices you&apos;d never actually get), parameters
+          tuned until the curve looks heroic &mdash; then real money meets a
+          strategy that never existed. I didn&apos;t want to build another
+          hunt for market-beating returns. I wanted to build the system that
+          cannot lie to me, and treat <em>that</em> as the engineering
+          problem.
+        </p>
+        <p class="reveal">
+          So Trading Lab is paper-trading-first by construction. Every
+          strategy climbs a promotion ladder &mdash; backtest to walk-forward
+          (re-fit on a rolling window, judged only on the unseen data that
+          follows) to paper trading (live market data, simulated money) to
+          gated live &mdash; with demotion automatic at every rung; the
+          figure below has the gates.
+        </p>
+        <p class="reveal">
+          The scope is deliberately boring: end-of-day (EOD) daily bars,
+          long-only, three liquid US ETFs (SPY, QQQ, IWM). The strategies are
+          textbook on purpose &mdash; a 50/200 SMA cross (hold while the
+          50-day moving average sits above the 200-day) and an RSI-2 dip
+          buyer (a two-day relative-strength index, buying short-term
+          oversold dips) &mdash; because the system is the product, not the
+          alpha. Most strategy ideas fail; that&apos;s the expected outcome.
+          The durable asset is the infrastructure that makes the next idea
+          cheap to test <em>honestly</em>: the engine, the cost model, the
+          risk layer, the journal.
+        </p>
+        <p class="reveal">
+          The repo&apos;s design doc states the operating principle outright,
+          and it drove every decision below: <strong>a misleading number is a
+          worse bug than a missing feature.</strong>
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Promotion ladder diagram, scrolls horizontally on narrow screens">
+          <svg viewBox="0 0 880 430" width="880" height="430" style="min-width:740px;width:100%;height:auto" role="img" aria-label="Promotion ladder, four rungs bottom to top. Backtest: at least 100 trades, positive after pessimistic costs. Walk-forward: average profit per trade holds on unseen data, one shot at the final held-out slice. Paper: months of live-data fidelity, zero unexplained divergences. Live: locked, gated, currently empty. Upward arrows between rungs are labeled tradinglab gate PASS; a red arrow spanning all rungs points down, labeled demotion is automatic.">
+            <!-- rung: LIVE (locked) -->
+            <rect class="bx-off" x="50" y="26" width="250" height="58" rx="3"></rect>
+            <text class="t-faint" x="76" y="61" font-size="12" letter-spacing="2">LIVE</text>
+            <!-- padlock -->
+            <g class="ln-dim" stroke-width="1.4">
+              <rect x="256" y="52" width="18" height="14" rx="2" fill="none"></rect>
+              <path d="M 260 52 v -6 a 5 5 0 0 1 10 0 v 6" fill="none"></path>
+            </g>
+            <text class="t-faint" x="330" y="61" font-size="11">gated &mdash; currently empty</text>
+
+            <!-- rung: PAPER -->
+            <rect class="bx-hot" x="50" y="126" width="250" height="58" rx="3"></rect>
+            <text class="t-amber" x="76" y="161" font-size="12" letter-spacing="2">PAPER</text>
+            <text class="t-muted" x="330" y="153" font-size="11">months of live-data fidelity</text>
+            <text class="t-muted" x="330" y="171" font-size="11">zero unexplained divergences</text>
+
+            <!-- rung: WALK-FORWARD -->
+            <rect class="bx" x="50" y="226" width="250" height="58" rx="3"></rect>
+            <text class="t-bone" x="76" y="261" font-size="12" letter-spacing="2">WALK-FORWARD</text>
+            <text class="t-muted" x="330" y="253" font-size="11">avg profit per trade holds on unseen data</text>
+            <text class="t-muted" x="330" y="271" font-size="11">one shot at the final held-out slice</text>
+
+            <!-- rung: BACKTEST -->
+            <rect class="bx" x="50" y="326" width="250" height="58" rx="3"></rect>
+            <text class="t-bone" x="76" y="361" font-size="12" letter-spacing="2">BACKTEST</text>
+            <text class="t-muted" x="330" y="353" font-size="11">&ge;100 trades</text>
+            <text class="t-muted" x="330" y="371" font-size="11">positive after pessimistic costs</text>
+
+            <!-- up arrows + gate labels -->
+            <g class="ln-amb" stroke-width="1">
+              <line x1="175" y1="324" x2="175" y2="288"></line>
+              <polyline points="171,293 175,288 179,293"></polyline>
+              <line x1="175" y1="224" x2="175" y2="188"></line>
+              <polyline points="171,193 175,188 179,193"></polyline>
+              <line x1="175" y1="124" x2="175" y2="88"></line>
+              <polyline points="171,93 175,88 179,93"></polyline>
+            </g>
+            <g font-size="10">
+              <text class="t-dim" x="192" y="309">tradinglab gate &middot; PASS</text>
+              <text class="t-dim" x="192" y="209">tradinglab gate &middot; PASS</text>
+              <text class="t-dim" x="192" y="109">tradinglab gate &middot; PASS</text>
+            </g>
+
+            <!-- demotion arrow -->
+            <g class="ln-red" stroke-width="1.2">
+              <line x1="790" y1="40" x2="790" y2="388"></line>
+              <polyline points="785,382 790,389 795,382"></polyline>
+            </g>
+            <text class="t-red" font-size="11" letter-spacing="2" transform="rotate(90 804 120)" x="804" y="120">DEMOTION IS AUTOMATIC</text>
+          </svg>
+        </div>
+        <figcaption>The promotion ladder. Up requires a PASS from <span class="tm-amber">tradinglab gate</span>; down happens on its own.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 02 THE ENGINE ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">02</span>
+        <span class="sec-num">02</span>
+        <span class="sec-label">The engine</span>
+      </div>
+      <h2 class="reveal">One simulation core, zero forks</h2>
+      <div class="prose">
+        <p class="reveal">
+          I wrote a custom simulation engine &mdash; roughly 500 lines &mdash;
+          instead of adopting backtrader or vectorbt. For an EOD problem this
+          small, a framework buys convenience and costs explainability; I
+          wanted every number in every report traceable to code I can read in
+          one sitting.
+        </p>
+        <p class="reveal">
+          The architectural bet that matters most: <strong>one
+          <code>SimulationCore</code> runs both backtesting and paper
+          trading.</strong> The daily step is identical &mdash; fill queued
+          orders at the open, check stops, mark equity (value the account at
+          that day&apos;s prices), evaluate the kill switch, queue new orders.
+          Because the code path is shared, any divergence between a paper
+          account and a backtest replay over the same days is a <em>data</em>
+          problem, not a code fork. The parity test &mdash;
+          <code>test_paper_incremental_equals_continuous_replay</code> &mdash;
+          is the most important test in the repo: it proves that daily
+          incremental paper runs, including missed-day catch-up, produce
+          exactly the state one continuous replay produces.
+        </p>
+        <p class="reveal">
+          No-look-ahead is enforced by the engine, not by strategy discipline.
+          A signal computed at bar <em>t</em>&apos;s close fills at bar
+          <em>t+1</em>&apos;s open, pinned by
+          <code>test_no_lookahead_fill_at_next_open</code>. Stops model a
+          resting stop order &mdash; a standing instruction to sell once
+          price falls to a set level: if the market opens already below the
+          stop (a gap), the fill is at that worse open; if price merely
+          touches the stop intraday, the fill is at the stop price.
+        </p>
+        <p class="reveal">
+          Costs are pessimistic by default &mdash; max($1, $0.005/share)
+          commission plus 5 bps of slippage per side (basis points, hundredths
+          of a percent &mdash; the gap between the screen price and the fill
+          you actually get). A zero-cost run requires deliberately editing
+          config. Optimism should never be an accident.
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="No-look-ahead timeline, scrolls horizontally on narrow screens">
+          <svg viewBox="0 0 880 300" width="880" height="300" style="min-width:700px;width:100%;height:auto" role="img" aria-label="Timeline with two daily candles, day t and day t plus one. An amber marker at day t's close is labeled signal computed here. An arrow arcs over the overnight gap to day t plus one's open, labeled order fills here, plus 5 basis points of slippage. A crossed-out ghost arrow pointing back into day t's own bar is labeled same-bar fill: impossible by construction.">
+            <!-- axis -->
+            <line class="ln-dim" x1="60" y1="250" x2="820" y2="250" stroke-width="1"></line>
+            <polyline class="ln-dim" points="813,246 820,250 813,254" stroke-width="1"></polyline>
+            <text class="t-faint" x="230" y="276" font-size="11" text-anchor="middle">day t</text>
+            <text class="t-faint" x="600" y="276" font-size="11" text-anchor="middle">day t+1</text>
+            <text class="t-faint" x="415" y="240" font-size="10" text-anchor="middle">overnight</text>
+
+            <!-- candle: day t -->
+            <line class="ln-dim" x1="230" y1="92" x2="230" y2="236" stroke-width="1"></line>
+            <rect class="bx" x="217" y="110" width="26" height="100" rx="1"></rect>
+
+            <!-- candle: day t+1 -->
+            <line class="ln-dim" x1="600" y1="72" x2="600" y2="228" stroke-width="1"></line>
+            <rect class="bx" x="587" y="92" width="26" height="110" rx="1"></rect>
+
+            <!-- signal marker at close of day t -->
+            <circle class="t-amber" cx="230" cy="110" r="4"></circle>
+            <text class="t-amber" x="246" y="100" font-size="11">signal computed here</text>
+            <text class="t-muted" x="246" y="116" font-size="10">close of day t</text>
+
+            <!-- fill marker at open of day t+1 -->
+            <circle class="t-amber" cx="600" cy="196" r="4"></circle>
+            <text class="t-amber" x="618" y="192" font-size="11">order fills here</text>
+            <text class="t-muted" x="618" y="208" font-size="10">open of day t+1 &middot; +5 bps slippage</text>
+
+            <!-- arc over the gap -->
+            <path class="ln-amb" d="M 238 104 C 360 36, 520 70, 596 188" stroke-width="1.2"></path>
+            <polyline class="ln-amb" points="589,182 596,190 598,181" stroke-width="1.2"></polyline>
+
+            <!-- impossible ghost arrow -->
+            <path class="ln-dim" d="M 222 106 C 150 60, 120 140, 210 160" stroke-width="1" stroke-dasharray="4 4"></path>
+            <polyline class="ln-dim" points="202,156 211,160 203,165" stroke-width="1"></polyline>
+            <g class="ln-red" stroke-width="1.4">
+              <line x1="134" y1="92" x2="152" y2="110"></line>
+              <line x1="152" y1="92" x2="134" y2="110"></line>
+            </g>
+            <text class="t-muted" x="60" y="48" font-size="10">same-bar fill:</text>
+            <text class="t-muted" x="60" y="63" font-size="10">impossible by construction</text>
+          </svg>
+        </div>
+        <figcaption>Signal at close t, fill at open t+1 &mdash; enforced by the engine and pinned by a test, not by discipline.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 03 THE RISK LAYER ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">03</span>
+        <span class="sec-num">03</span>
+        <span class="sec-label">The risk layer</span>
+      </div>
+      <h2 class="reveal">Strategies are not allowed to touch money</h2>
+      <div class="prose">
+        <p class="reveal">
+          A strategy in Trading Lab emits exactly one thing: desired exposure,
+          0 or 1, per bar at the close. It cannot size a position, place an
+          order, or see the account. A separate risk layer converts intent
+          into shares:
+        </p>
+        <ul class="reveal">
+          <li>0.5% of current equity risked per trade against an ATR stop
+          (average true range &mdash; how far the ticker typically moves in a
+          day; the stop distance sets the share count, so size is an output
+          of risk, never an input).</li>
+          <li>A 25% position cap, so a tight stop can never justify a huge
+          position.</li>
+          <li>Five concurrent positions max &mdash; correlations converge to
+          one in selloffs.</li>
+          <li>No shorting or leverage anywhere in the interfaces.</li>
+        </ul>
+        <p class="reveal">
+          Capability absence beats capability discipline.
+        </p>
+        <p class="reveal">
+          Drawdown &mdash; the fall from peak account equity &mdash; gets a
+          two-tier, software-enforced response. At &minus;10% from peak, new
+          entries pause while existing positions keep their stops and exits.
+          At &minus;15%, the kill switch liquidates everything and halts the
+          account until a manual, deliberate reset &mdash; it fires precisely
+          when my judgment would be worst, which is the point. Both tiers run
+          identically in backtest, in the internal paper simulator, and
+          against the adapter for Alpaca, a retail brokerage with a
+          paper-trading API.
+        </p>
+        <p class="reveal">
+          About that adapter: it is paper-only <em>by construction</em>. There
+          is no live-trading switch in the codebase to be careful with. The
+          broker executes and reports; my code decides. And the permanent
+          internal simulator keeps running in parallel as a shadow reference,
+          so fill quality against a real broker&apos;s paper engine is itself
+          measured data.
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Two-tier drawdown diagram, scrolls horizontally on narrow screens">
+          <svg viewBox="0 0 880 340" width="880" height="340" style="min-width:700px;width:100%;height:auto" role="img" aria-label="A jagged equity curve descends from peak equity through two horizontal thresholds: an amber dashed line at minus 10 percent, where entries pause and existing stops stay live, and a red solid line at minus 15 percent, where the kill switch liquidates and halts, with a manual reset. The band between the thresholds is shaded amber; the region below the kill line is shaded red. A note says the rules run identically in backtest, shadow paper, and broker paper.">
+            <!-- peak line -->
+            <line class="ln-dim" x1="60" y1="70" x2="820" y2="70" stroke-width="1" stroke-dasharray="2 5"></line>
+            <text class="t-faint" x="60" y="58" font-size="10">peak equity &middot; 0%</text>
+
+            <!-- shaded band between tiers -->
+            <rect class="band" x="60" y="170" width="760" height="50" stroke="none"></rect>
+            <!-- shaded region below the kill line -->
+            <rect class="band-red" x="60" y="220" width="760" height="70" stroke="none"></rect>
+
+            <!-- tier lines -->
+            <line class="ln-amb" x1="60" y1="170" x2="820" y2="170" stroke-width="1.2" stroke-dasharray="6 5"></line>
+            <text class="t-amber" x="478" y="160" font-size="11">&minus;10% &middot; entries pause &middot; existing stops stay live</text>
+
+            <line class="ln-red" x1="60" y1="220" x2="820" y2="220" stroke-width="1.4"></line>
+            <text class="t-red" x="478" y="244" font-size="11">&minus;15% &middot; kill switch: liquidate + halt &middot; reset is manual</text>
+
+            <!-- equity curve -->
+            <polyline class="ln-dim" stroke-width="1.6" points="60,70 100,88 128,78 168,112 198,101 238,142 266,129 308,172 336,160 376,198 404,187 440,220" stroke-linejoin="round"></polyline>
+            <circle class="t-red" cx="440" cy="220" r="4.5"></circle>
+            <text class="t-red" x="430" y="206" font-size="10" text-anchor="end">kill switch fires</text>
+            <!-- halted flat line -->
+            <line class="ln-dim" x1="440" y1="220" x2="588" y2="220" stroke-width="1" stroke-dasharray="3 5"></line>
+            <text class="t-faint" x="596" y="224" font-size="10">halted</text>
+
+            <!-- footnote -->
+            <text class="t-muted" x="60" y="312" font-size="10">runs identically in backtest, shadow paper, and broker paper</text>
+          </svg>
+        </div>
+        <figcaption>Two tiers, both software-enforced. The switch exists because judgment is worst exactly when it&apos;s needed.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 04 THE ADVERSARIAL REVIEW ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">04</span>
+        <span class="sec-num">04</span>
+        <span class="sec-label">The adversarial review</span>
+      </div>
+      <h2 class="reveal">Five critics, one verdict</h2>
+      <div class="prose">
+        <p class="reveal">
+          After v1 shipped, I ran a structured adversarial review: five
+          simulated trader personas &mdash; a full-time day trader, an
+          intermediate swing trader, a long-term investor, a beginner, and a
+          professional systematic PM &mdash; each driven through the real
+          tool, pushed past its limits, with a critique filed per persona.
+          The critiques and their synthesis live in the repo as research
+          docs.
+        </p>
+        <p class="reveal">
+          All five, including the two whose trading styles the tool can&apos;t
+          serve at all, independently reached the same verdict: the engine is
+          honest and the reports are not. The plumbing earned trust everywhere
+          it was probed &mdash; next-open fills, resting-stop semantics,
+          pessimistic costs, the holdout guard (a final slice of history you
+          may test against exactly once), deterministic reruns, full run
+          provenance. But every persona&apos;s <em>worst</em> finding was
+          output that misleads rather than a feature that&apos;s missing. The
+          headline: no report anywhere compared a strategy to buy-and-hold
+          &mdash; just buying the index and doing nothing &mdash; while both
+          shipped strategies lag SPY by double-digit CAGR points (compound
+          annual growth rate) on the tool&apos;s own cached data. The reports
+          framed them in flattering absolute terms instead. The beginner
+          persona put it brutally: they would have paper-traded for six months
+          believing it worked.
+        </p>
+        <p class="reveal">
+          That verdict inverted the roadmap. For a project whose entire value
+          is trustworthy evidence, the highest-impact work was not adding
+          capability &mdash; it was making existing capability tell the truth.
+          I rebuilt the roadmap into honesty-first waves, and the benchmark
+          layer shipped before any new feature did. Getting told your reports
+          flatter you, by your own review process, and reordering everything
+          in response: that&apos;s the system working on its own author.
+        </p>
+      </div>
+
+      <figure class="quote reveal">
+        <div class="quote-inner">
+          <p class="quote-line">&ldquo;The engine is honest.<br>The reports <em>are not</em>.&rdquo;</p>
+          <div class="personas">
+            <span class="persona">day trader<b>concurred</b></span>
+            <span class="persona">swing<b>concurred</b></span>
+            <span class="persona">investor<b>concurred</b></span>
+            <span class="persona">beginner<b>concurred</b></span>
+            <span class="persona">systematic PM<b>concurred</b></span>
+          </div>
+        </div>
+        <figcaption>All five critiques and their synthesis are filed as research docs in the repo.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 05 THE HONESTY LAYER ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">05</span>
+        <span class="sec-num">05</span>
+        <span class="sec-label">The honesty layer</span>
+      </div>
+      <h2 class="reveal">Reports that argue against themselves</h2>
+      <div class="prose">
+        <p class="reveal">
+          The honesty wave turned the critique into machinery.
+        </p>
+        <p class="reveal">
+          <strong>No number stands alone.</strong> Every backtest and
+          walk-forward report now carries a benchmark block: buy-and-hold SPY
+          and an equal-weight universe portfolio over the identical window,
+          same adjusted data, same cost model &mdash; with alpha and beta
+          (return in excess of the benchmark, and how hard the strategy moves
+          when the benchmark moves), capture ratios (the share of the
+          benchmark&apos;s up and down moves you participate in), and a
+          plain-English verdict line. A strategy that lags the index says so in its own
+          report. Both shipped strategies currently do, openly. That sentence
+          printing is the thesis of the whole project.
+        </p>
+        <p class="reveal">
+          <strong>The ladder became executable.</strong> <code>tradinglab gate
+          &lt;run-dir&gt;</code> evaluates the promotion criteria as PASS/FAIL
+          from run artifacts &mdash; trade count, expectancy after costs
+          (average profit per trade), margin over the modeled round-trip
+          cost, robustness with the best trades removed, the benchmark
+          verdict. Promotion is no longer prose; it&apos;s an exit code.
+        </p>
+        <p class="reveal">
+          <strong>Expectation bands with path-based rules.</strong>
+          <code>tradinglab envelope</code> builds block-bootstrap expectation
+          bands (resampling contiguous chunks of the trade record, so streaks
+          survive the shuffle) from a validated record and judges the live
+          paper account against them &mdash; path-based, so a crash below the
+          kill percentile (the pre-registered worst-case path) that later
+          bounces still kills. No getting lucky retroactively.
+        </p>
+        <p class="reveal">
+          <strong>Regime splits.</strong> Every backtest reports performance
+          across benchmark trend &times; volatility terciles (thirds), so an
+          edge concentrated in one friendly regime can&apos;t hide in the
+          average.
+        </p>
+        <p class="reveal">
+          <strong>Loud rejection of bad inputs.</strong> Intraday or NAV-only
+          data (net asset value), negative costs, and off-contract signals all
+          raise clear errors instead of producing confident wrong answers.
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Mock terminal output of a tradinglab report with a benchmark block. The strategy trails buy-and-hold SPY and the equal-weight universe on every column, and the verdict line reads: strategy LAGS buy-and-hold SPY over this window. Scrolls horizontally on narrow screens.">
+          <pre class="term"><span class="tm-faint">$</span> <span class="tm-bone">tradinglab report</span> <span class="tm-muted">runs/sma_cross_wf/</span>
+
+<span class="tm-amber">BENCHMARK</span><span class="tm-faint">  (same window &middot; same adjusted data &middot; same cost model)</span>
+
+<span class="tm-faint">                            CAGR    Sharpe    max DD</span>
+  <span class="tm-bone">strategy: sma_cross</span>       4.3%      0.41    &minus;11.8%
+  <span class="tm-muted">buy &amp; hold SPY</span>           17.1%      0.93    &minus;18.6%
+  <span class="tm-muted">equal-weight universe</span>    15.4%      0.86    &minus;20.2%
+
+  <span class="tm-muted">alpha &minus;1.4%  &middot;  beta 0.36  &middot;  up-capture 31% / down-capture 44%</span>
+
+  <span class="tm-verdict">VERDICT: strategy LAGS buy-and-hold SPY over this window.</span> <span class="tcaret"></span></pre>
+        </div>
+        <figcaption>Illustrative figures, not real account data. Sharpe is return per unit of volatility; max DD is maximum drawdown. The verdict line printing is the point.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 06 STATUS ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">06</span>
+        <span class="sec-num">06</span>
+        <span class="sec-label">Status</span>
+      </div>
+      <h2 class="reveal">What the ladder has promoted so far: nothing</h2>
+      <div class="prose">
+        <p class="reveal">
+          Where it stands, stated plainly. The suite is 108 tests, with the
+          backtest/paper parity test at its center. Two textbook strategies
+          have full backtest and walk-forward records with parameter surfaces
+          (performance mapped across the whole grid of parameter choices) and
+          out-of-sample expectancy persisted per walk-forward window. The internal simulator
+          runs the daily paper cycle; the Alpaca paper adapter runs the same
+          signals against a real broker&apos;s paper engine in parallel, with
+          the simulator as shadow reference &mdash; the divergence between
+          them is exactly the fill-quality data the paper rung exists to
+          measure.
+        </p>
+        <p class="reveal">
+          And no strategy has been promoted to real money. Not because the
+          ladder is unfinished &mdash; because the gates work. The benchmark
+          verdict says both strategies lag buy-and-hold, so they sit at the
+          paper rung generating fidelity data, and <code>gate</code> will keep
+          saying FAIL until something earns PASS. A system that promoted them
+          anyway would be a more impressive demo and a worse piece of
+          engineering.
+        </p>
+        <p class="reveal">
+          Ahead, in order: first-class user strategies and a universe scan
+          command, then an event-style signal contract. Today a strategy can
+          only say &ldquo;be in&rdquo; or &ldquo;be out&rdquo; &mdash; so
+          after a stop ejects a position, the strategy still says &ldquo;be
+          in&rdquo; and re-buys the next day, paying the round-trip cost
+          again. That churn is the one structural cost I&apos;ve documented
+          rather than hidden; entering only on a fresh cross (plus trailing
+          stops and shorting) removes it. The repo is private; this page is
+          the tour.
+        </p>
+        <p class="reveal">
+          The summary: I set out to build a system that couldn&apos;t
+          lie to me, and the proof it works is that it keeps delivering news I
+          don&apos;t want. Every claim on this page traces to a test, a
+          report, or a critique in the repo. That&apos;s the job.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CTA ================= -->
+  <section class="cta-block">
+    <div class="wrap">
+      <h2 class="reveal">Want to watch the gate <em>say FAIL?</em></h2>
+      <p class="cta-sub reveal">
+        The repo is private, but the parity test, the gate command, and a
+        report that openly admits its strategy is losing all make for a good
+        screen-share.
+      </p>
+      <a class="cta reveal" href="mailto:sravan.pattabhi97@gmail.com">
+        sravan.pattabhi97@gmail.com <span class="cta-arr" aria-hidden="true">&nearr;</span>
+      </a>
+      <br>
+      <a class="back-link reveal" href="/">&larr; Back to the portfolio</a>
+      <footer>
+        <span>&copy; 2026 Sravan Pattabhi</span>
+        <span>Case study &mdash; Trading Lab &mdash; hand-built, one HTML file</span>
+      </footer>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var mmR = window.matchMedia("(prefers-reduced-motion: reduce)");
+  function red() { return mmR.matches; }
+
+  /* ================= SCROLL PROGRESS HAIRLINE ================= */
+  var bar = document.getElementById("progress");
+  var ticking = false;
+  function paint() {
+    ticking = false;
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var y = window.scrollY || h.scrollTop || 0;
+    if (bar) bar.style.width = (max > 0 ? (y / max) * 100 : 0) + "%";
+  }
+  function onScroll() {
+    if (!ticking) { ticking = true; requestAnimationFrame(paint); }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  paint();
+
+  /* ================= REVEAL ON SCROLL ================= */
+  var revealEls = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window && !red()) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("in");
+        io.unobserve(en.target);
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add("in"); });
+  }
+
+  /* live reduced-motion toggle: compose the static state immediately */
+  function applyRed() {
+    if (!red()) return;
+    revealEls.forEach(function (el) { el.classList.add("in"); });
+  }
+  if (mmR.addEventListener) mmR.addEventListener("change", applyRed);
+})();
+</script>
+
+</body>
+</html>
