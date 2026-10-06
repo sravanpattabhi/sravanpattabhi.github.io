@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cairn &mdash; Sravan Pattabhi</title>
+  <meta name="description" content="Case study: Cairn, a job-search engine whose core feature is that it refuses to lie &mdash; provenance-tracked dedupe, explainable scoring, append-only history, and a dual-backend refactor gated by golden masters.">
+  <meta name="author" content="Sravan Pattabhi">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0C0E13">
+  <meta property="og:title" content="Cairn &mdash; Sravan Pattabhi">
+  <meta property="og:description" content="Case study: Cairn, a job-search engine whose core feature is that it refuses to lie &mdash; provenance-tracked dedupe, explainable scoring, append-only history, and a dual-backend refactor gated by golden masters.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://sravanpattabhi.github.io/cairn.html">
+  <meta property="og:image" content="https://sravanpattabhi.github.io/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://sravanpattabhi.github.io/cairn.html">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<style>
+  /* ============ Tokens -- same committed dark world as the main site ============ */
+  :root {
+    --ink:      #0C0E13;
+    --surface:  #151823;
+    --raised:   #1B1F2E;
+    --bone:     #EAE5D9;
+    --read:     #AEB4C6;
+    --muted:    #8A90A5;
+    --faint:    #565C70;
+    --line:     #262B3A;
+    --amber:    #E8A33D;
+    --amber-dim:#8A6526;
+
+    --display: "Bricolage Grotesque", "Arial Narrow", Impact, sans-serif;
+    --body:    "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono:    "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+
+    --ease-out:   cubic-bezier(.19, 1, .22, 1);
+    --ease-inout: cubic-bezier(.65, 0, .35, 1);
+    --d-micro: .18s; --d-hover: .42s; --d-reveal: .8s;
+
+    --fs-mono-1: 11px; --fs-mono-2: 12px; --fs-mono-3: 13px;
+
+    --pad: clamp(20px, 5vw, 64px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--bone);
+    font-family: var(--body);
+    font-size: clamp(17px, 1.8vw, 18px);
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* film grain -- carried over from the main site */
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: 80;
+    pointer-events: none; opacity: .05;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="140" height="140"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="140" height="140" filter="url(%23n)"/%3E%3C/svg%3E');
+  }
+
+  ::selection { background: var(--amber); color: var(--ink); }
+
+  a { color: inherit; text-decoration: none; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); }
+
+  /* ============ Scroll progress hairline ============ */
+  #progress {
+    position: fixed; top: 0; left: 0; height: 2px; width: 0;
+    background: var(--amber); z-index: 60;
+    box-shadow: 0 0 8px rgba(232,163,61,.55);
+  }
+
+  /* ============ Nav ============ */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    background: color-mix(in srgb, var(--ink) 82%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .mark { font-family: var(--mono); font-size: var(--fs-mono-3); letter-spacing: .08em; color: var(--bone); }
+  .mark b { color: var(--amber); font-weight: 500; }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    position: relative; padding: 4px 0;
+    transition: color var(--d-hover) var(--ease-out);
+  }
+  .nav-links a::after {
+    content: ""; position: absolute; left: 0; bottom: 0;
+    width: 100%; height: 1px; background: var(--amber);
+    transform: scaleX(0); transform-origin: right;
+    transition: transform var(--d-hover) var(--ease-out);
+  }
+  .nav-links a:hover { color: var(--bone); }
+  .nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+
+  /* ============ Hero ============ */
+  .cs-hero { padding: 170px 0 72px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
+    text-transform: uppercase; color: var(--amber);
+    display: inline-flex; align-items: center; gap: 10px;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .1s forwards;
+  }
+  .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--amber); }
+
+  .cs-hero h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(42px, 8vw, 96px);
+    line-height: .98;
+    letter-spacing: -0.02em;
+    margin-top: 22px;
+    max-width: 14ch;
+    text-wrap: balance;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .22s forwards;
+  }
+
+  .standfirst {
+    margin-top: 32px;
+    max-width: 68ch;
+    font-size: clamp(18px, 2.2vw, 22px);
+    line-height: 1.55;
+    color: var(--muted);
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .36s forwards;
+  }
+  .standfirst em { color: var(--bone); font-style: normal; }
+
+  .hero-meta {
+    margin-top: 44px;
+    display: flex; gap: 40px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .5s forwards;
+  }
+  .hero-meta span b { color: var(--muted); font-weight: 400; display: block; margin-top: 4px; text-transform: none; }
+
+  @keyframes fadeup {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ Stat strip ============ */
+  .statstrip {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    padding: 40px 0;
+  }
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 22px; }
+  .stat-val {
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(28px, 3.6vw, 44px); line-height: 1;
+    color: var(--bone); letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-val .suf { color: var(--amber); }
+  .stat-label {
+    font-family: var(--mono); font-size: var(--fs-mono-1); text-transform: uppercase;
+    letter-spacing: .12em; color: var(--faint); margin-top: 10px; line-height: 1.5;
+  }
+  @media (max-width: 900px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ============ Sections ============ */
+  section.cs { padding: clamp(80px, 10vw, 140px) 0 0; }
+
+  .sec-head {
+    position: relative;
+    display: flex; align-items: baseline; gap: 18px;
+    padding-bottom: 18px; margin-bottom: 34px;
+  }
+  .sec-head::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: var(--line);
+    transform: scaleX(0); transform-origin: left;
+  }
+  .sec-head.in::after { transform: scaleX(1); transition: transform var(--d-reveal) var(--ease-inout) .15s; }
+  .sec-num {
+    font-family: var(--mono); font-size: var(--fs-mono-3); color: var(--amber); letter-spacing: .1em;
+  }
+  .sec-label {
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
+    text-transform: uppercase; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .sec-label::before { content: ""; width: 22px; height: 1px; background: var(--amber); }
+  .ghost {
+    position: absolute; right: 0; bottom: -6px;
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(80px, 13vw, 170px); line-height: 1;
+    color: transparent; -webkit-text-stroke: 1px var(--line);
+    pointer-events: none; user-select: none; z-index: -1;
+  }
+
+  .cs h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(30px, 4.6vw, 54px);
+    line-height: 1.06; letter-spacing: -0.015em;
+    max-width: 24ch;
+    text-wrap: balance;
+    margin-bottom: 30px;
+  }
+
+  .prose { max-width: 68ch; }
+  .prose p { color: var(--read); }
+  .prose p + p { margin-top: 1.35em; }
+  .prose strong { color: var(--bone); font-weight: 600; }
+  .prose em { color: var(--bone); font-style: italic; }
+  .prose code {
+    font-family: var(--mono); font-size: .82em;
+    color: var(--bone);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 2px 6px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .prose ul { list-style: none; margin: 1.35em 0; }
+  .prose li {
+    color: var(--read);
+    position: relative; padding-left: 24px;
+  }
+  .prose li + li { margin-top: .65em; }
+  .prose li::before {
+    content: "\25C6"; position: absolute; left: 2px; top: .5em;
+    font-size: 8px; line-height: 1; color: var(--amber-dim);
+  }
+
+  /* ============ Figures (schematic voice) ============ */
+  .viz {
+    margin: 44px 0 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .viz-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px; }
+  .viz-scroll:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
+  .viz svg { display: block; }
+  @media (max-width: 700px) {
+    .viz { position: relative; }
+    .viz-scroll::after {
+      content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 36px;
+      pointer-events: none;
+      background: linear-gradient(to right, transparent, var(--surface));
+    }
+    .viz figcaption::after { content: " \00B7 drag \2192"; color: var(--faint); }
+  }
+  .viz figcaption {
+    font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .06em;
+    color: var(--faint);
+    border-top: 1px solid var(--line);
+    padding: 10px 16px;
+  }
+  .viz figcaption::before { content: "\25C6"; color: var(--amber-dim); margin-right: 10px; font-size: 8px; }
+
+  /* svg text voice */
+  .viz text { font-family: var(--mono); }
+  .t-bone  { fill: var(--bone); }
+  .t-muted { fill: var(--muted); }
+  .t-faint { fill: var(--faint); }
+  .t-amber { fill: var(--amber); }
+  .t-dim   { fill: var(--amber-dim); }
+  .bx      { fill: var(--ink); stroke: var(--line); }
+  .bx-hot  { fill: var(--ink); stroke: var(--amber-dim); }
+  .ln      { stroke: var(--line); fill: none; }
+  .ln-dim  { stroke: var(--faint); fill: none; }
+  .ln-amb  { stroke: var(--amber-dim); fill: none; }
+  .band    { fill: rgba(232,163,61,.07); stroke: var(--amber-dim); }
+
+  /* the page's single ambient flourish: a terminal caret in the health strip */
+  .caret { fill: var(--amber); animation: blink 1.1s steps(2, start) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ============ Reveal on scroll ============ */
+  .reveal {
+    opacity: 0; transform: translateY(26px);
+    transition: opacity var(--d-reveal) var(--ease-out), transform var(--d-reveal) var(--ease-out);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+
+  /* ============ CTA + footer ============ */
+  .cta-block { padding: clamp(100px, 13vw, 180px) 0 40px; }
+  .cta-block h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(36px, 6.4vw, 76px);
+    line-height: 1.02; letter-spacing: -0.02em;
+    max-width: 16ch; text-wrap: balance;
+  }
+  .cta-block h2 em { font-style: normal; color: var(--amber); }
+  .cta-sub { margin-top: 20px; max-width: 58ch; color: var(--muted); }
+  .cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    margin-top: 40px;
+    font-family: var(--mono); font-size: var(--fs-mono-3); letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink); background: var(--amber);
+    padding: 18px 30px; border-radius: 99px;
+    transition: background var(--d-hover) var(--ease-out);
+  }
+  .cta .cta-arr { display: inline-block; transition: transform var(--d-micro) var(--ease-out); }
+  .cta:hover { background: #F2B95A; }
+  .cta:hover .cta-arr { transform: translate(3px, -3px); }
+  @media (max-width: 480px) {
+    .cta { font-size: var(--fs-mono-2); padding: 14px 20px; letter-spacing: .06em; }
+  }
+  .back-link {
+    display: inline-block; margin-top: 36px;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted);
+    transition: color var(--d-hover) var(--ease-out);
+  }
+  .back-link:hover { color: var(--amber); }
+
+  footer {
+    margin-top: 80px;
+    border-top: 1px solid var(--line);
+    padding: 26px 0 34px;
+    display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
+    color: var(--faint);
+  }
+
+  /* ============ Reduced motion -- composed static state ============ */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .eyebrow, .cs-hero h1, .standfirst, .hero-meta { animation: none; opacity: 1; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .sec-head::after { transform: scaleX(1); transition: none; }
+    .caret { animation: none; }
+    .nav-links a, .nav-links a::after, .cta, .cta .cta-arr, .back-link { transition: none; }
+  }
+</style>
+<noscript><style>
+  .reveal { opacity: 1; transform: none; }
+  .sec-head::after { transform: scaleX(1); }
+</style></noscript>
+
+<div id="progress" aria-hidden="true"></div>
+
+<header>
+  <div class="wrap nav">
+    <a class="mark" href="/">SP<b>&mdash;</b>2026</a>
+    <ul class="nav-links">
+      <li><a href="/">&larr; Back</a></li>
+      <li><a href="/#contact">Contact</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= HERO ================= -->
+  <section class="cs-hero">
+    <div class="wrap">
+      <p class="eyebrow">Case study &mdash; Cairn</p>
+      <h1>Engineering an honest job&#8209;search engine</h1>
+      <p class="standfirst">
+        Job boards are full of ghost postings, and the tools built on top of
+        them are full of AI slop. I built Cairn &mdash; a job-search engine
+        whose core feature is that it <em>refuses to lie to you</em> &mdash;
+        and then refactored it from a zero-test script into a dual-backend,
+        multi-tenant system without changing a single output byte.
+      </p>
+      <div class="hero-meta">
+        <span>Role<b>Design &amp; build: Sravan Pattabhi</b></span>
+        <span>Status<b>Private repo &mdash; in active development</b></span>
+        <span>Stack<b>Python &middot; Flask &middot; SQLite / Postgres</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= AT A GLANCE ================= -->
+  <div class="statstrip">
+    <div class="wrap stats">
+      <div class="stat reveal">
+        <div class="stat-val">0</div>
+        <div class="stat-label">Scraped sources &mdash; legal APIs only</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">~100</div>
+        <div class="stat-label">Tests, 9 suites</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">6</div>
+        <div class="stat-label">Decisions on record (ADRs)</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">4<span class="suf">+</span>2</div>
+        <div class="stat-label">Job sources: 4 employer ATS boards + 2 aggregators</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">2</div>
+        <div class="stat-label">Pinned runtime deps</div>
+      </div>
+      <div class="stat reveal">
+        <div class="stat-val">2</div>
+        <div class="stat-label">Database backends, one seam</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 01 THE ITCH ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">01</span>
+        <span class="sec-num">01</span>
+        <span class="sec-label">The itch</span>
+      </div>
+      <h2 class="reveal">Constraints first, features second</h2>
+      <div class="prose">
+        <p class="reveal">
+          A meaningful fraction of job postings are ghosts &mdash; roles that
+          are expired, filled, or were never real. The tools that grew up
+          around this market mostly made it worse: scrapers that violate the
+          terms of every site they touch, LLMs ghost-writing cover letters
+          recruiters have learned to detect on sight, auto-apply bots that
+          spray a thousand applications and land in spam filters.
+        </p>
+        <p class="reveal">
+          Cairn started from the stances, not the features.
+        </p>
+        <ul class="reveal">
+          <li><strong>No scraping</strong> &mdash; every source is a legal,
+          public API.</li>
+          <li><strong>No AI ghost-writing</strong> &mdash; outreach drafts are
+          deterministic templates with <code>[brackets]</code> a human fills
+          in; no LLM writes a word of your text.</li>
+          <li><strong>No auto-apply, ever.</strong></li>
+          <li><strong>Statuses move only when you move them</strong> &mdash; a
+          background scan can discover a new role, but nothing in the system
+          will ever silently advance your application from
+          <code>interested</code> to <code>applied</code>.</li>
+        </ul>
+        <p class="reveal">
+          These read like product copy, but each one is an engineering
+          constraint with teeth, and most of them ended up enforced in code or
+          schema rather than in a style guide. That enforcement is what the
+          rest of this page is about. The codebase is a private repo &mdash;
+          what follows is the architecture, honestly told, including the parts
+          that aren&apos;t finished.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 02 THE PIPELINE ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">02</span>
+        <span class="sec-num">02</span>
+        <span class="sec-label">The pipeline</span>
+      </div>
+      <h2 class="reveal">Anatomy of a scan</h2>
+      <div class="prose">
+        <p class="reveal">
+          &quot;Zero results&quot; and &quot;your API key is dead&quot; are
+          very different facts, and a tool that conflates them is lying by
+          omission. The scan is built around that distinction. It is one
+          function with six stages: <strong>fetch &rarr; dedupe &rarr;
+          lazy-enrich &rarr; score &rarr; filter/rank &rarr; persist</strong>.
+          Company mode hits the employer&apos;s own ATS board (applicant
+          tracking system &mdash; the Greenhouse- or Lever-style job board a
+          company runs itself) directly, through Greenhouse, Lever, Ashby, and
+          SmartRecruiters adapters &mdash; all keyless public APIs &mdash;
+          plus aggregators filtered to that employer. Search mode goes
+          keyword-first across the aggregators.
+        </p>
+        <p class="reveal">
+          The organizing idea is <strong>fail-soft</strong>. Every adapter
+          catches its own failures and returns an empty list plus a health
+          string &mdash; a scan never crashes because one source did. The
+          health strings are blunt by design: <code>ok: 4 roles</code>,
+          <code>skipped: no key</code>, <code>error: rate-limited / quota
+          exceeded (HTTP 429)</code>, <code>no public ATS board matched this
+          name</code>. The UI shows them all, always.
+        </p>
+        <p class="reveal">
+          Two smaller decisions I like: description fetches for sources whose
+          list endpoints don&apos;t include them are lazy and bounded &mdash;
+          only title-relevant roles trigger a per-posting call, so a 500-role
+          board doesn&apos;t become 500 HTTP requests. And the company-mode
+          employer filter requires the query&apos;s normalized tokens as
+          whole-token subsets of the employer name, so a scan for
+          &quot;Box&quot; doesn&apos;t drag in &quot;Boxed&quot; while
+          &quot;Match Group LLC&quot; still matches &quot;Match Group&quot;.
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Pipeline diagram, scrolls horizontally on narrow screens">
+          <svg viewBox="0 0 960 250" width="960" height="250" style="min-width:860px;width:100%;height:auto" role="img" aria-label="Six-stage pipeline diagram: fetch, dedupe, enrich (lazy), score, filter/rank, persist. Under fetch, source chips for greenhouse, lever, ashby, smartrecruiters, plus two aggregators. Below, a source-health strip with three example strings: ats ok 4 roles; adzuna skipped, no key; jsearch error, HTTP 429.">
+            <!-- stage nodes -->
+            <g font-size="11" letter-spacing="1">
+              <rect class="bx-hot" x="40" y="28" width="112" height="44" rx="3"></rect>
+              <text class="t-bone" x="96" y="54" text-anchor="middle">FETCH</text>
+
+              <rect class="bx" x="192" y="28" width="112" height="44" rx="3"></rect>
+              <text class="t-bone" x="248" y="54" text-anchor="middle">DEDUPE</text>
+
+              <rect class="bx" x="344" y="28" width="112" height="44" rx="3"></rect>
+              <text class="t-bone" x="400" y="49" text-anchor="middle">ENRICH</text>
+              <text class="t-muted" x="400" y="63" text-anchor="middle" font-size="10">LAZY</text>
+
+              <rect class="bx" x="496" y="28" width="112" height="44" rx="3"></rect>
+              <text class="t-bone" x="552" y="54" text-anchor="middle">SCORE</text>
+
+              <rect class="bx" x="648" y="28" width="112" height="44" rx="3"></rect>
+              <text class="t-bone" x="704" y="54" text-anchor="middle" font-size="10">FILTER/RANK</text>
+
+              <rect class="bx" x="800" y="28" width="112" height="44" rx="3"></rect>
+              <text class="t-bone" x="856" y="54" text-anchor="middle">PERSIST</text>
+            </g>
+            <!-- arrows -->
+            <g class="ln-dim" stroke-width="1">
+              <line x1="156" y1="50" x2="188" y2="50"></line><polyline points="183,46 188,50 183,54"></polyline>
+              <line x1="308" y1="50" x2="340" y2="50"></line><polyline points="335,46 340,50 335,54"></polyline>
+              <line x1="460" y1="50" x2="492" y2="50"></line><polyline points="487,46 492,50 487,54"></polyline>
+              <line x1="612" y1="50" x2="644" y2="50"></line><polyline points="639,46 644,50 639,54"></polyline>
+              <line x1="764" y1="50" x2="796" y2="50"></line><polyline points="791,46 796,50 791,54"></polyline>
+            </g>
+            <!-- source chips under FETCH -->
+            <line class="ln-amb" x1="96" y1="72" x2="96" y2="94" stroke-width="1"></line>
+            <g font-size="10">
+              <rect class="bx" x="40"  y="94" width="90"  height="22" rx="11"></rect>
+              <text class="t-muted" x="85"  y="109" text-anchor="middle">greenhouse</text>
+              <rect class="bx" x="138" y="94" width="56"  height="22" rx="11"></rect>
+              <text class="t-muted" x="166" y="109" text-anchor="middle">lever</text>
+              <rect class="bx" x="202" y="94" width="58"  height="22" rx="11"></rect>
+              <text class="t-muted" x="231" y="109" text-anchor="middle">ashby</text>
+              <rect class="bx" x="268" y="94" width="118" height="22" rx="11"></rect>
+              <text class="t-muted" x="327" y="109" text-anchor="middle">smartrecruiters</text>
+              <rect class="bx" x="394" y="94" width="110" height="22" rx="11"></rect>
+              <text class="t-muted" x="449" y="109" text-anchor="middle">+2 aggregators</text>
+            </g>
+            <!-- source health strip -->
+            <rect class="bx" x="40" y="142" width="872" height="86" rx="3"></rect>
+            <text class="t-muted" x="54" y="162" font-size="10" letter-spacing="2">SOURCE HEALTH</text>
+            <g font-size="11">
+              <text class="t-muted" x="54" y="183">ats: ok: 4 roles</text>
+              <text class="t-faint" x="54" y="201">adzuna: skipped: no key</text>
+              <text class="t-amber" x="54" y="219">jsearch: error: HTTP 429</text>
+            </g>
+            <rect class="caret" x="222" y="210" width="7" height="11"></rect>
+          </svg>
+        </div>
+        <figcaption>One function, six stages. A failing source becomes an empty list plus a health entry &mdash; never a crashed scan.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 03 DEEP DIVE 01 ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">03</span>
+        <span class="sec-num">03</span>
+        <span class="sec-label">Provenance</span>
+      </div>
+      <h2 class="reveal">Dedupe with a paper trail</h2>
+      <div class="prose">
+        <p class="reveal">
+          The same role shows up on the company&apos;s ATS board and on two
+          aggregators, with different URLs, different descriptions, and
+          sometimes a different employer string. Most tools pick one copy
+          arbitrarily. Cairn collapses them into one row but keeps the
+          receipts: every source that saw the role stays in a
+          <code>sources</code> list, shown as chips in the UI.
+        </p>
+        <p class="reveal">
+          The merge rules encode a worldview. The <strong>direct ATS link
+          always wins</strong> &mdash; if an aggregator copy arrives first and
+          the ATS copy arrives second, the ATS row takes over as canonical and
+          inherits the accumulated source trail. The longer description wins.
+          A known posted date backfills a missing one. The result is that you
+          always apply at the employer&apos;s own board, never through an
+          aggregator redirect &mdash; and a role visible on both the company
+          ATS and an aggregator is itself a signal that the req is real and
+          active, surfaced rather than discarded.
+        </p>
+        <p class="reveal">
+          The golden-master suite &mdash; snapshot tests that pin the
+          engine&apos;s entire JSON output byte-for-byte against committed
+          fixtures &mdash; locks this in: one fixture
+          role arrives via both Greenhouse and an aggregator, and the test
+          asserts the merged row carries both source chips while the apply URL
+          is the greenhouse.io one. Provenance isn&apos;t a nice-to-have here;
+          it&apos;s the product&apos;s answer to ghost postings.
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Provenance merge diagram, scrolls horizontally on narrow screens">
+          <svg viewBox="0 0 880 300" width="880" height="300" style="min-width:700px;width:100%;height:auto" role="img" aria-label="Provenance merge diagram: three posting cards, one from Greenhouse marked direct and two from the aggregators jsearch and adzuna, converge into a single merged row that carries every source chip and uses the direct greenhouse.io apply link.">
+            <!-- left: three sightings -->
+            <g font-size="11">
+              <rect class="bx-hot" x="30" y="24" width="256" height="64" rx="3"></rect>
+              <text class="t-amber" x="46" y="48">greenhouse &middot; direct</text>
+              <text class="t-muted" x="46" y="70" font-size="10">boards.greenhouse.io/acme/4021</text>
+
+              <rect class="bx" x="30" y="118" width="256" height="64" rx="3"></rect>
+              <text class="t-muted" x="46" y="142">jsearch &middot; aggregator</text>
+              <text class="t-muted" x="46" y="164" font-size="10">jsearch result &middot; job_id 99418&hellip;</text>
+
+              <rect class="bx" x="30" y="212" width="256" height="64" rx="3"></rect>
+              <text class="t-muted" x="46" y="236">adzuna &middot; aggregator</text>
+              <text class="t-muted" x="46" y="258" font-size="10">adzuna.com/details/77el2&hellip;</text>
+            </g>
+            <!-- converging arrows -->
+            <g class="ln-dim" stroke-width="1" fill="none">
+              <path d="M 292 56 C 400 56, 450 120, 540 138"></path>
+              <path d="M 292 150 C 380 150, 450 150, 540 150"></path>
+              <path d="M 292 244 C 400 244, 450 180, 540 162"></path>
+              <polyline points="534,133 541,138 534,142"></polyline>
+              <polyline points="534,146 541,150 534,154"></polyline>
+              <polyline points="534,158 541,162 534,166"></polyline>
+            </g>
+            <!-- right: one merged row -->
+            <rect class="bx-hot" x="552" y="84" width="298" height="132" rx="3"></rect>
+            <text class="t-bone" x="570" y="112" font-size="12">one merged row</text>
+            <g font-size="10">
+              <rect class="bx" x="570" y="126" width="88" height="20" rx="10"></rect>
+              <text class="t-muted" x="614" y="140" text-anchor="middle">greenhouse</text>
+              <rect class="bx" x="666" y="126" width="68" height="20" rx="10"></rect>
+              <text class="t-muted" x="700" y="140" text-anchor="middle">jsearch</text>
+              <rect class="bx" x="742" y="126" width="62" height="20" rx="10"></rect>
+              <text class="t-muted" x="773" y="140" text-anchor="middle">adzuna</text>
+            </g>
+            <text class="t-amber" x="570" y="172" font-size="11">apply &rarr; boards.greenhouse.io/&hellip;</text>
+            <line class="ln-amb" x1="570" y1="180" x2="810" y2="180" stroke-width="1"></line>
+            <text class="t-muted" x="570" y="200" font-size="10">direct ATS link is canonical</text>
+          </svg>
+        </div>
+        <figcaption>Same role, three sightings, one row &mdash; the direct link wins.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 04 DEEP DIVE 02 ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">04</span>
+        <span class="sec-num">04</span>
+        <span class="sec-label">Scoring</span>
+      </div>
+      <h2 class="reveal">A score that shows its work</h2>
+      <div class="prose">
+        <p class="reveal">
+          Every scoring product in this category produces an opaque number
+          that users reasonably mistrust. Cairn&apos;s score is a plain
+          weighted blend of five components, collapsing to a tier &mdash;
+          <strong>Strong, Good, or Stretch</strong>:
+        </p>
+        <ul class="reveal">
+          <li><strong>Title match</strong> &mdash; damped hard when the title
+          doesn&apos;t match at all, rather than dropped.</li>
+          <li><strong>Skills coverage</strong> &mdash; core skills weighted
+          more heavily.</li>
+          <li><strong>Seniority fit</strong> &mdash; hard mismatches are
+          dropped outright before scoring.</li>
+          <li><strong>Location fit</strong></li>
+          <li><strong>Domain relevance</strong></li>
+        </ul>
+        <p class="reveal">
+          Two properties matter more than the formula. First, it&apos;s
+          <strong>explainable by construction</strong>: the components that
+          produced the number are the same data shown to the user &mdash;
+          matched skills as chips, and a &quot;gaps&quot; list computed by
+          diffing the job description&apos;s tech vocabulary against the
+          profile&apos;s skills, so you see exactly which keywords your resume
+          is missing for this specific role. No embedding, no model, nothing
+          that can&apos;t be read in an afternoon.
+        </p>
+        <p class="reveal">
+          Second, it&apos;s <strong>honest about what it isn&apos;t</strong>.
+          The UI says so in as many words: the score is a profile-fit
+          estimate, not a callback prediction. A deterministic rubric can be
+          audited, versioned, and argued with. A vibe from a model can&apos;t.
+          For a tool whose brand is trust, that tradeoff wasn&apos;t close
+          &mdash; and the profile itself is data, a JSON document in a
+          <code>profiles</code> row, so the rubric&apos;s inputs are per-user
+          without the engine changing shape.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 05 DEEP DIVE 03 ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">05</span>
+        <span class="sec-num">05</span>
+        <span class="sec-label">Structural promises</span>
+      </div>
+      <h2 class="reveal">History you can&apos;t rewrite</h2>
+      <div class="prose">
+        <p class="reveal">
+          <strong>The funnel event log is append-only.</strong> Every status
+          transition writes a <code>job_status_events</code> row &mdash; old
+          status, new status, actor, timestamp &mdash; and nothing in the
+          codebase updates or deletes one. The reason to land this table early
+          is unforgiving: history can never be backfilled. Analytics,
+          follow-up queues, and outcome calibration can all be built later,
+          but only on events that were actually recorded at the time.
+        </p>
+        <p class="reveal">
+          Rescans
+          upsert fresh postings data while your statuses survive untouched
+          &mdash; there&apos;s a test whose whole job is proving that a
+          re-scan doesn&apos;t reset <code>interested</code> back to
+          <code>new</code>. The promise from section 01 &mdash; statuses move
+          only when you move them &mdash; is carried by the event log and its
+          tests, not by anyone remembering to be careful.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 06 DEEP DIVE 04 ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">06</span>
+        <span class="sec-num">06</span>
+        <span class="sec-label">The seam</span>
+      </div>
+      <h2 class="reveal">One seam, two databases &mdash; and a tenancy gate that runs on both</h2>
+      <div class="prose">
+        <p class="reveal">
+          Cross-tenant leakage is the one bug class that kills a
+          trust-positioned product, so it&apos;s the one class with a standing
+          gate. The setup that gate protects: Cairn is built as a local
+          single-user edition on SQLite and a pooled cloud edition on Postgres
+          &mdash; same codebase, selected by <code>DATABASE_URL</code>. The
+          port is deliberately small: nothing outside a single store module
+          knows which backend is running. Instead of SQLAlchemy (rejected in
+          writing &mdash; see the ADR rejection table below), the adapter is
+          about forty lines of psycopg glue: <code>?</code> placeholders
+          rewritten to <code>%s</code>, dict-style rows,
+          commit-on-clean-exit. Each backend keeps its own migration history
+          and version number, because Postgres arrived after the big schema
+          split and has no legacy to carry.
+        </p>
+        <p class="reveal">
+          The schema itself is four tables with one ownership chain:
+          <strong>users &rarr; profiles &rarr; matches &larr; postings</strong>.
+          Postings are shared facts; matches are one profile&apos;s
+          relationship to a posting &mdash; score, tier, gaps, status. The
+          split exists because multi-tenancy makes a combined row wrong by
+          construction: two profiles matching the same posting cannot share a
+          status column.
+        </p>
+        <p class="reveal">
+          Tenancy is enforced at a chokepoint: every per-profile store
+          function <em>requires</em> a <code>profile_id</code> &mdash; there
+          is no unscoped variant to call by accident, and web handlers never
+          touch tables directly. And because a tenancy property that only
+          holds on the dev database is not a property, the cross-tenant
+          isolation suite is parametrized across SQLite &times; Postgres and
+          runs as a <strong>permanent CI gate</strong>, with a postgres:17
+          service container in every CI run.
+        </p>
+        <p class="reveal">
+          The same seam enforces a privacy promise outright.
+          <strong>The cloud database has no contacts table.</strong>
+          Cairn&apos;s referrals engine matches your exported LinkedIn
+          connections CSV against hiring companies &mdash; third-party PII,
+          the most radioactive data in the system. The promise is &quot;your
+          contacts file never touches our servers,&quot; and rather than
+          enforce it with a code path someone could regress, the Postgres
+          schema simply <strong>does not define a connections table</strong>.
+          The <code>/api/connections/*</code> endpoints check the backend and
+          return 403 before touching the engine. On the cloud backend there is
+          nothing to write to, no query to forget a WHERE clause on, no backup
+          that could leak it. The database cannot hold what the product
+          promised not to hold. That&apos;s my favorite line of architecture
+          in the project, and it&apos;s a schema omission.
+        </p>
+      </div>
+
+      <figure class="viz reveal">
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Seam diagram, scrolls horizontally on narrow screens">
+          <svg viewBox="0 0 880 370" width="880" height="370" style="min-width:700px;width:100%;height:auto" role="img" aria-label="Seam diagram: the store seam is the only module that knows which backend runs. Left column, SQLite local edition: file on disk, schema v4, connections table present, webhook channel. Right column, Postgres cloud edition: pooled connections, schema v2, connections table does not exist and the API returns 403. Spanning both at the bottom: the cross-tenant isolation suite, parametrized sqlite times postgres, permanent CI gate.">
+            <!-- the seam -->
+            <rect class="bx-hot" x="250" y="16" width="380" height="48" rx="3"></rect>
+            <text class="t-bone" x="440" y="45" font-size="12" text-anchor="middle">the store seam &mdash; the only module that knows</text>
+            <g class="ln-dim" stroke-width="1" fill="none">
+              <polyline points="440,64 440,84 240,84 240,102"></polyline>
+              <polyline points="440,84 640,84 640,102"></polyline>
+            </g>
+            <!-- left column -->
+            <rect class="bx" x="60" y="104" width="360" height="178" rx="3"></rect>
+            <text class="t-amber" x="80" y="132" font-size="11" letter-spacing="1">SQLITE &middot; LOCAL EDITION</text>
+            <g class="t-muted" font-size="11">
+              <text x="80" y="162">file on disk &middot; single user</text>
+              <text x="80" y="188">migrations: schema v4</text>
+              <text x="80" y="214">connections table: present</text>
+              <text x="80" y="240">notifications: webhook channel</text>
+            </g>
+            <!-- right column -->
+            <rect class="bx" x="460" y="104" width="360" height="178" rx="3"></rect>
+            <text class="t-amber" x="480" y="132" font-size="11" letter-spacing="1">POSTGRES &middot; CLOUD EDITION</text>
+            <g class="t-muted" font-size="11">
+              <text x="480" y="162">pooled &middot; multi-tenant</text>
+              <text x="480" y="188">migrations: schema v2</text>
+              <text class="t-bone" x="480" y="214">connections table: DOES NOT EXIST</text>
+              <text x="480" y="240">/api/connections/* &rarr; 403</text>
+            </g>
+            <rect class="band" x="748" y="202" width="42" height="18" rx="2"></rect>
+            <text class="t-amber" x="769" y="215" font-size="10" text-anchor="middle">403</text>
+            <!-- isolation gate band -->
+            <g class="ln-dim" stroke-width="1">
+              <line x1="240" y1="282" x2="240" y2="302"></line>
+              <line x1="640" y1="282" x2="640" y2="302"></line>
+            </g>
+            <rect class="band" x="60" y="304" width="760" height="46" rx="3"></rect>
+            <text class="t-amber" x="440" y="332" font-size="11" text-anchor="middle">cross-tenant isolation suite &mdash; parametrized sqlite &times; postgres &middot; permanent CI gate</text>
+          </svg>
+        </div>
+        <figcaption>One seam, two backends &mdash; nothing outside the store seam knows which.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ================= 07 THE DISCIPLINE ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">07</span>
+        <span class="sec-num">07</span>
+        <span class="sec-label">The discipline</span>
+      </div>
+      <h2 class="reveal">Refactoring a zero-test codebase behind golden masters</h2>
+      <div class="prose">
+        <p class="reveal">
+          Cairn began life as a working script with zero tests &mdash; and a
+          refactor queue that included a package split, an app factory, a
+          four-table schema migration, and a second database backend. The rule
+          I set before touching any of it: <strong>tests before refactors,
+          golden masters green before and after</strong>.
+        </p>
+        <p class="reveal">
+          The golden-master suite runs the entire engine &mdash; adapters
+          through persistence &mdash; against recorded fixtures, then compares
+          the full JSON output to a committed snapshot, byte for byte. One
+          hard-won detail: the fixtures generate posting dates relative to
+          today, and the first snapshots recorded them absolutely &mdash; so
+          the goldens silently expired the day after recording, going red on
+          identical engine output. The fix normalizes dates to
+          <code>TODAY-N</code> placeholders, making the snapshots stable
+          regardless of when the suite runs. Characterization tests (tests
+          that pin current behavior rather than intended behavior) have
+          failure modes of their own; this one taught me to test the test.
+        </p>
+        <p class="reveal">
+          The payoff was the schema split: migrating one <code>jobs</code>
+          table into users/profiles/postings/matches while
+          <code>list_matches</code> kept returning the joined row under the
+          exact old keys. The frontend was untouched and the goldens stayed
+          byte-identical through the entire migration.
+        </p>
+        <p class="reveal">
+          The other half of the discipline is six ADRs &mdash; architecture
+          decision records, one-page write-ups of each decision and its
+          reasoning &mdash; including a standing rejection table where
+          microservices, Kubernetes, SQLAlchemy, and CRDT sync engines are
+          turned down <em>in writing</em>, each with a reason and a revisit
+          trigger. Rejections that aren&apos;t written down get re-litigated
+          forever; these stay rejected until load, not fashion, says
+          otherwise. CI runs the lot &mdash; lint, types, and all ~100 tests
+          on Python 3.11 and 3.12, isolation gate on both backends.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 08 STATUS ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">08</span>
+        <span class="sec-num">08</span>
+        <span class="sec-label">Status</span>
+      </div>
+      <h2 class="reveal">What it is today, and what it is not yet</h2>
+      <div class="prose">
+        <p class="reveal">
+          Today Cairn is a working single-user system, end to end.
+        </p>
+        <ul class="reveal">
+          <li>Scan any company with a public ATS board.</li>
+          <li>Get explainably scored, deduped results with full
+          provenance.</li>
+          <li>Track a funnel whose history is append-only.</li>
+          <li>Draft outreach from templates no AI wrote.</li>
+          <li>Keep a scheduled watchlist that reports failures instead of
+          hiding them &mdash; and never moves a status on its own.</li>
+        </ul>
+        <p class="reveal">
+          The dual-backend store is verified against a real Postgres 17 with
+          the app booted end-to-end on it. Runtime dependencies: Flask and
+          requests, pinned. That&apos;s the whole list.
+        </p>
+        <p class="reveal">
+          What it is not yet: a cloud product you can sign up for.
+          Authentication isn&apos;t built &mdash; the session plumbing has
+          exactly one function to replace when it lands, which was the point
+          of building the seam first. Self-serve export and delete are
+          designed (the FK cascade chain already makes delete a one-statement
+          operation) but the endpoints aren&apos;t written. There&apos;s no
+          hosted deployment and no email infrastructure.
+        </p>
+        <p class="reveal">
+          The honest version of the pitch is that the hard architectural
+          promises &mdash; isolation gated in CI, privacy enforced by schema,
+          history that can&apos;t be rewritten &mdash; were built
+          <em>before</em> the first user, because they&apos;re the kind of
+          thing you can&apos;t retrofit credibly. The rest is work, and
+          it&apos;s written down.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CTA ================= -->
+  <section class="cta-block">
+    <div class="wrap">
+      <h2 class="reveal">Want the <em>full walkthrough?</em></h2>
+      <p class="cta-sub reveal">
+        The repo is private, but the ADRs, the golden-master suite, and the
+        isolation gate all make for a good screen-share.
+      </p>
+      <a class="cta reveal" href="mailto:sravan.pattabhi97@gmail.com">
+        sravan.pattabhi97@gmail.com <span class="cta-arr" aria-hidden="true">&nearr;</span>
+      </a>
+      <br>
+      <a class="back-link reveal" href="/">&larr; Back to the portfolio</a>
+      <footer>
+        <span>&copy; 2026 Sravan Pattabhi</span>
+        <span>Case study &mdash; Cairn &mdash; hand-built, one HTML file</span>
+      </footer>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var mmR = window.matchMedia("(prefers-reduced-motion: reduce)");
+  function red() { return mmR.matches; }
+
+  /* ================= SCROLL PROGRESS HAIRLINE ================= */
+  var bar = document.getElementById("progress");
+  var ticking = false;
+  function paint() {
+    ticking = false;
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var y = window.scrollY || h.scrollTop || 0;
+    if (bar) bar.style.width = (max > 0 ? (y / max) * 100 : 0) + "%";
+  }
+  function onScroll() {
+    if (!ticking) { ticking = true; requestAnimationFrame(paint); }
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  paint();
+
+  /* ================= REVEAL ON SCROLL ================= */
+  var revealEls = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window && !red()) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("in");
+        io.unobserve(en.target);
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add("in"); });
+  }
+
+  /* live reduced-motion toggle: compose the static state immediately */
+  function applyRed() {
+    if (!red()) return;
+    revealEls.forEach(function (el) { el.classList.add("in"); });
+  }
+  if (mmR.addEventListener) mmR.addEventListener("change", applyRed);
+})();
+</script>
+
+</body>
+</html>
