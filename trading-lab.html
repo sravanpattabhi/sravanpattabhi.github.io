@@ -76,9 +76,10 @@
 
   /* ============ Scroll progress hairline ============ */
   #progress {
-    position: fixed; top: 0; left: 0; height: 2px; width: 0;
+    position: fixed; top: 0; left: 0; height: 2px; width: 100%;
     background: var(--amber); z-index: 60;
     box-shadow: 0 0 8px rgba(232,163,61,.55);
+    transform: scaleX(0); transform-origin: 0 0;
   }
 
   /* ============ Nav ============ */
@@ -268,7 +269,7 @@
       background: linear-gradient(to right, transparent, var(--surface));
     }
     .viz figcaption { position: relative; background: var(--surface); }
-    .viz figcaption::after { content: " \00B7 drag \2192"; color: var(--faint); }
+    .viz figcaption::after { content: " \00B7 drag \2192" / ""; color: var(--faint); }
   }
   .viz figcaption, .quote figcaption {
     font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .06em;
@@ -296,6 +297,54 @@
   .ln-red  { stroke: var(--red); fill: none; }
   .band    { fill: rgba(232,163,61,.07); stroke: var(--amber-dim); }
   .band-red{ fill: rgba(217,106,85,.07); stroke: var(--red-dim); }
+
+  /* ============ Figure scenes -- one animation grammar across the site ============ */
+  /* The markup is the complete, composed figure. The scene driver adds .anim-live
+     to an svg while its loop runs, and .anim-settled under reduced motion; with
+     no JS nothing is hidden. Packet dots are decorative and stay aria-hidden. */
+  .anim-node rect { transition: stroke .55s var(--ease-inout); }
+  .anim-node text { transition: fill .55s var(--ease-inout); }
+  .anim-live .anim-node rect { stroke: var(--line); }
+  .anim-live .anim-node.anim-active rect { stroke: var(--amber-dim); }
+  .anim-live .anim-node .anim-hot { fill: var(--muted); }
+  .anim-live .anim-node.anim-active .anim-hot { fill: var(--amber); }
+  .anim-settled .anim-node rect { stroke: var(--amber-dim); }
+
+  .anim-dot { opacity: 0; }
+  .anim-live .anim-dot.anim-on { opacity: 1; }
+
+  .anim-live .anim-fade { opacity: 0; transition: opacity .5s var(--ease-out); }
+  .anim-live .anim-fade.anim-on { opacity: 1; }
+  .anim-live .anim-dim { opacity: .3; transition: opacity .5s var(--ease-out); }
+  .anim-live .anim-dim.anim-on { opacity: 1; }
+
+  .anim-live .anim-draw {
+    stroke-dasharray: var(--draw, 600);
+    stroke-dashoffset: var(--draw, 600);
+  }
+  .anim-live .anim-draw.anim-on {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset var(--drawd, 1.1s) var(--ease-inout);
+  }
+
+  .anim-live .anim-amp { stroke: var(--amber-dim); transition: stroke .6s var(--ease-inout); }
+  .anim-live .anim-amp.anim-on { stroke: var(--amber); }
+
+  .anim-live .anim-slide { transition: transform .35s var(--ease-inout); }
+
+  .anim-live .anim-flash.anim-on { animation: scene-flash 1s var(--ease-out) 1; }
+  @keyframes scene-flash { 0% { opacity: .1; } 40% { opacity: 1; } 65% { opacity: .35; } 100% { opacity: 1; } }
+
+  .anim-live .anim-rattle.anim-on { animation: scene-rattle .7s var(--ease-inout) 1; }
+  @keyframes scene-rattle {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-2px); }
+    45% { transform: translateX(2px); }
+    70% { transform: translateX(-1px); }
+  }
+
+  .anim-live .anim-drop { transform: translateY(-10px); }
+  .anim-live .anim-drop.anim-on { transform: translateY(0); transition: transform .45s var(--ease-out), opacity .45s var(--ease-out); }
 
   /* ============ Quote card (typographic) ============ */
   .quote {
@@ -337,8 +386,8 @@
   .tcaret {
     display: inline-block; width: 7px; height: 12px;
     background: var(--amber); vertical-align: baseline;
-    animation: blink 1.1s steps(2, start) infinite;
   }
+  .anim-live .tcaret, .anim-settled .tcaret { animation: blink 1.1s steps(2, start) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
   /* ============ What this demonstrates ============ */
@@ -415,8 +464,17 @@
     .eyebrow, .cs-hero h1, .standfirst, .hero-meta { animation: none; opacity: 1; }
     .reveal { opacity: 1; transform: none; transition: none; }
     .sec-head::after { transform: scaleX(1); transition: none; }
-    .tcaret { animation: none; }
+    .tcaret, .anim-live .tcaret, .anim-settled .tcaret { animation: none; }
     .nav-links a, .nav-links a::after, .cta, .cta .cta-arr, .back-link { transition: none; }
+    /* figure scenes settle to the complete composed frame, no motion */
+    .anim-node rect, .anim-node text { transition: none; }
+    .anim-live .anim-fade, .anim-live .anim-dim { opacity: 1; transition: none; }
+    .anim-live .anim-draw, .anim-live .anim-draw.anim-on { stroke-dasharray: none; stroke-dashoffset: 0; transition: none; }
+    .anim-live .anim-amp { stroke: var(--amber-dim); transition: none; }
+    .anim-live .anim-slide { transition: none; }
+    .anim-live .anim-flash.anim-on, .anim-live .anim-rattle.anim-on { animation: none; }
+    .anim-live .anim-drop, .anim-live .anim-drop.anim-on { transform: none; transition: none; }
+    .anim-live .anim-dot.anim-on { opacity: 0; transition: none; }
   }
 </style>
 <noscript><style>
@@ -433,7 +491,7 @@
     <a class="mark" href="index.html">SP<b>&mdash;</b>2026</a>
     <ul class="nav-links">
       <li><a href="cairn.html">Cairn</a></li>
-      <li><a class="cur" aria-current="true" href="trading-lab.html">Trading Lab</a></li>
+      <li><a class="cur" aria-current="page" href="trading-lab.html">Trading Lab</a></li>
       <li><a href="how-i-build.html">Method</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
@@ -541,56 +599,68 @@
 
       <figure class="viz reveal">
         <div class="viz-scroll" tabindex="0" role="group" aria-label="Promotion ladder diagram, scrolls horizontally on narrow screens">
-          <svg viewBox="0 0 880 430" width="880" height="430" style="min-width:740px;width:100%;height:auto" role="img" aria-label="Promotion ladder, four rungs bottom to top. Backtest: at least 100 trades, positive after pessimistic costs. Walk-forward: average profit per trade holds on unseen data, one shot at the final held-out slice. Paper: months of live-data fidelity, zero unexplained divergences. Live: locked, gated, currently empty. Upward arrows between rungs are labeled tradinglab gate PASS; a red arrow spanning all rungs points down, labeled demotion is automatic.">
+          <svg id="fig-ladder" viewBox="0 0 880 430" width="880" height="430" style="min-width:740px;width:100%;height:auto" role="img" aria-label="Promotion ladder, four rungs bottom to top. Backtest: at least 100 trades, positive after pessimistic costs. Walk-forward: average profit per trade holds on unseen data, one shot at the final held-out slice. Paper: months of live-data fidelity, zero unexplained divergences. Live: locked, gated, currently empty. Upward arrows from backtest and from walk-forward are labeled tradinglab gate PASS; the arrow toward the locked live rung is labeled tradinglab gate FAIL. A red arrow spanning all rungs points down, labeled demotion is automatic. While visible, the gate arrows pulse upward rung by rung, the attempt at live fails with a red cross while the locked rung rattles and stays locked, and the demotion arrow sweeps down once per cycle; under reduced motion the figure is a single static frame.">
             <!-- rung: LIVE (locked) -->
-            <rect class="bx-off" x="50" y="26" width="250" height="58" rx="3"></rect>
-            <text class="t-faint" x="76" y="61" font-size="12" letter-spacing="2">LIVE</text>
-            <!-- padlock -->
-            <g class="ln-dim" stroke-width="1.4">
-              <rect x="256" y="52" width="18" height="14" rx="2" fill="none"></rect>
-              <path d="M 260 52 v -6 a 5 5 0 0 1 10 0 v 6" fill="none"></path>
+            <g class="anim-rattle" id="tl-live">
+              <rect class="bx-off" x="50" y="26" width="250" height="58" rx="3"></rect>
+              <text class="t-faint" x="76" y="61" font-size="12" letter-spacing="2">LIVE</text>
+              <!-- padlock -->
+              <g class="ln-dim" stroke-width="1.4">
+                <rect x="256" y="52" width="18" height="14" rx="2" fill="none"></rect>
+                <path d="M 260 52 v -6 a 5 5 0 0 1 10 0 v 6" fill="none"></path>
+              </g>
+            </g>
+            <g class="ln-red anim-fade anim-flash" id="tl-x" stroke-width="1.4" aria-hidden="true">
+              <line x1="284" y1="50" x2="296" y2="62"></line>
+              <line x1="296" y1="50" x2="284" y2="62"></line>
             </g>
             <text class="t-faint" x="330" y="61" font-size="11">gated &mdash; currently empty</text>
 
             <!-- rung: PAPER -->
-            <rect class="bx-hot" x="50" y="126" width="250" height="58" rx="3"></rect>
-            <text class="t-amber" x="76" y="161" font-size="12" letter-spacing="2">PAPER</text>
+            <g class="anim-node tl-rung" id="tl-r-paper">
+              <rect class="bx-hot" x="50" y="126" width="250" height="58" rx="3"></rect>
+              <text class="t-amber anim-hot" x="76" y="161" font-size="12" letter-spacing="2">PAPER</text>
+            </g>
             <text class="t-muted" x="330" y="153" font-size="11">months of live-data fidelity</text>
             <text class="t-muted" x="330" y="171" font-size="11">zero unexplained divergences</text>
 
             <!-- rung: WALK-FORWARD -->
-            <rect class="bx" x="50" y="226" width="250" height="58" rx="3"></rect>
-            <text class="t-bone" x="76" y="261" font-size="12" letter-spacing="2">WALK-FORWARD</text>
+            <g class="anim-node tl-rung" id="tl-r-wf">
+              <rect class="bx" x="50" y="226" width="250" height="58" rx="3"></rect>
+              <text class="t-bone anim-hot" x="76" y="261" font-size="12" letter-spacing="2">WALK-FORWARD</text>
+            </g>
             <text class="t-muted" x="330" y="253" font-size="11">avg profit per trade holds on unseen data</text>
             <text class="t-muted" x="330" y="271" font-size="11">one shot at the final held-out slice</text>
 
             <!-- rung: BACKTEST -->
-            <rect class="bx" x="50" y="326" width="250" height="58" rx="3"></rect>
-            <text class="t-bone" x="76" y="361" font-size="12" letter-spacing="2">BACKTEST</text>
+            <g class="anim-node tl-rung" id="tl-r-bt">
+              <rect class="bx" x="50" y="326" width="250" height="58" rx="3"></rect>
+              <text class="t-bone anim-hot" x="76" y="361" font-size="12" letter-spacing="2">BACKTEST</text>
+            </g>
             <text class="t-muted" x="330" y="353" font-size="11">&ge;100 trades</text>
             <text class="t-muted" x="330" y="371" font-size="11">positive after pessimistic costs</text>
 
             <!-- up arrows + gate labels -->
             <g class="ln-amb" stroke-width="1">
-              <line x1="175" y1="324" x2="175" y2="288"></line>
-              <polyline points="171,293 175,288 179,293"></polyline>
-              <line x1="175" y1="224" x2="175" y2="188"></line>
-              <polyline points="171,193 175,188 179,193"></polyline>
-              <line x1="175" y1="124" x2="175" y2="88"></line>
-              <polyline points="171,93 175,88 179,93"></polyline>
+              <line id="tl-ga1" class="anim-draw" style="--draw:40;--drawd:.5s" x1="175" y1="324" x2="175" y2="288"></line>
+              <polyline id="tl-gh1" class="anim-fade" points="171,293 175,288 179,293"></polyline>
+              <line id="tl-ga2" class="anim-draw" style="--draw:40;--drawd:.5s" x1="175" y1="224" x2="175" y2="188"></line>
+              <polyline id="tl-gh2" class="anim-fade" points="171,193 175,188 179,193"></polyline>
+              <line id="tl-ga3" class="anim-draw" style="--draw:40;--drawd:.5s" x1="175" y1="124" x2="175" y2="88"></line>
+              <polyline id="tl-gh3" class="anim-fade" points="171,93 175,88 179,93"></polyline>
             </g>
             <g font-size="10">
-              <text class="t-dim" x="192" y="309">tradinglab gate &middot; PASS</text>
-              <text class="t-dim" x="192" y="209">tradinglab gate &middot; PASS</text>
-              <text class="t-dim" x="192" y="109">tradinglab gate &middot; PASS</text>
+              <text id="tl-gp1" class="t-dim anim-dim" x="192" y="309">tradinglab gate &middot; PASS</text>
+              <text id="tl-gp2" class="t-dim anim-dim" x="192" y="209">tradinglab gate &middot; PASS</text>
+              <text id="tl-gp3" class="t-red anim-dim" x="192" y="109">tradinglab gate &middot; FAIL</text>
             </g>
 
             <!-- demotion arrow -->
             <g class="ln-red" stroke-width="1.2">
-              <line x1="790" y1="40" x2="790" y2="388"></line>
-              <polyline points="785,382 790,389 795,382"></polyline>
+              <line id="tl-dem" class="anim-draw" style="--draw:360" x1="790" y1="40" x2="790" y2="388"></line>
+              <polyline id="tl-demh" class="anim-fade" points="785,382 790,389 795,382"></polyline>
             </g>
-            <text class="t-red" font-size="11" letter-spacing="2" transform="rotate(90 804 120)" x="804" y="120">DEMOTION IS AUTOMATIC</text>
+            <text id="tl-demt" class="t-red anim-dim" font-size="11" letter-spacing="2" transform="rotate(90 804 120)" x="804" y="120">DEMOTION IS AUTOMATIC</text>
           </svg>
         </div>
         <figcaption>The promotion ladder. Up requires a PASS from <span class="tm-amber">tradinglab gate</span>; down happens on its own.</figcaption>
@@ -652,7 +722,7 @@
 
       <figure class="viz reveal">
         <div class="viz-scroll" tabindex="0" role="group" aria-label="No-look-ahead timeline, scrolls horizontally on narrow screens">
-          <svg viewBox="0 0 880 300" width="880" height="300" style="min-width:700px;width:100%;height:auto" role="img" aria-label="Timeline with two daily candles, day t and day t plus one. An amber marker at day t's close is labeled signal computed here. An arrow arcs over the overnight gap to day t plus one's open, labeled order fills here, plus 5 basis points of slippage. A crossed-out ghost arrow pointing back into day t's own bar is labeled same-bar fill: impossible by construction.">
+          <svg id="fig-nolook" viewBox="0 0 880 300" width="880" height="300" style="min-width:700px;width:100%;height:auto" role="img" aria-label="Timeline with two daily candles, day t and day t plus one. An amber marker at day t's close is labeled signal computed here. An arrow arcs over the overnight gap to day t plus one's open, labeled order fills here, plus 5 basis points of slippage. A crossed-out ghost arrow pointing back into day t's own bar is labeled same-bar fill: impossible by construction. While visible, the signal marker appears, the denied same-bar arrow flashes, and the arc draws to the next open; under reduced motion the figure is a single static frame.">
             <!-- axis -->
             <line class="ln-dim" x1="60" y1="250" x2="820" y2="250" stroke-width="1"></line>
             <polyline class="ln-dim" points="813,246 820,250 813,254" stroke-width="1"></polyline>
@@ -669,28 +739,36 @@
             <rect class="bx" x="587" y="92" width="26" height="110" rx="1"></rect>
 
             <!-- signal marker at close of day t -->
-            <circle class="t-amber" cx="230" cy="110" r="4"></circle>
-            <text class="t-amber" x="246" y="100" font-size="11">signal computed here</text>
-            <text class="t-muted" x="246" y="116" font-size="10">close of day t</text>
+            <g class="anim-fade" id="tn-sig">
+              <circle class="t-amber" cx="230" cy="110" r="4"></circle>
+              <text class="t-amber" x="246" y="100" font-size="11">signal computed here</text>
+              <text class="t-muted" x="246" y="116" font-size="10">close of day t</text>
+            </g>
 
             <!-- fill marker at open of day t+1 -->
-            <circle class="t-amber" cx="600" cy="196" r="4"></circle>
-            <text class="t-amber" x="618" y="192" font-size="11">order fills here</text>
-            <text class="t-muted" x="618" y="208" font-size="10">open of day t+1 &middot; +5 bps slippage</text>
+            <g class="anim-fade" id="tn-fill">
+              <circle class="t-amber" cx="600" cy="196" r="4"></circle>
+              <text class="t-amber" x="618" y="192" font-size="11">order fills here</text>
+              <text class="t-muted" x="618" y="208" font-size="10">open of day t+1 &middot; +5 bps slippage</text>
+            </g>
 
             <!-- arc over the gap -->
-            <path class="ln-amb" d="M 238 104 C 360 36, 520 70, 596 188" stroke-width="1.2"></path>
-            <polyline class="ln-amb" points="589,182 596,190 598,181" stroke-width="1.2"></polyline>
+            <path id="tn-arc" class="ln-amb anim-draw" style="--draw:420;--drawd:1.3s" d="M 238 104 C 360 36, 520 70, 596 188" stroke-width="1.2"></path>
+            <polyline id="tn-arch" class="ln-amb anim-fade" points="589,182 596,190 598,181" stroke-width="1.2"></polyline>
 
             <!-- impossible ghost arrow -->
-            <path class="ln-dim" d="M 222 106 C 150 60, 120 140, 210 160" stroke-width="1" stroke-dasharray="4 4"></path>
-            <polyline class="ln-dim" points="202,156 211,160 203,165" stroke-width="1"></polyline>
-            <g class="ln-red" stroke-width="1.4">
-              <line x1="134" y1="92" x2="152" y2="110"></line>
-              <line x1="152" y1="92" x2="134" y2="110"></line>
+            <g class="anim-fade" id="tn-ghost">
+              <path class="ln-dim" d="M 222 106 C 150 60, 120 140, 210 160" stroke-width="1" stroke-dasharray="4 4"></path>
+              <polyline class="ln-dim" points="202,156 211,160 203,165" stroke-width="1"></polyline>
             </g>
-            <text class="t-muted" x="60" y="48" font-size="10">same-bar fill:</text>
-            <text class="t-muted" x="60" y="63" font-size="10">impossible by construction</text>
+            <g class="anim-fade anim-flash" id="tn-x">
+              <g class="ln-red" stroke-width="1.4">
+                <line x1="134" y1="92" x2="152" y2="110"></line>
+                <line x1="152" y1="92" x2="134" y2="110"></line>
+              </g>
+              <text class="t-muted" x="60" y="48" font-size="10">same-bar fill:</text>
+              <text class="t-muted" x="60" y="63" font-size="10">impossible by construction</text>
+            </g>
           </svg>
         </div>
         <figcaption>Signal at close t, fill at open t+1 &mdash; enforced by the engine and pinned by a test, not by discipline.</figcaption>
@@ -751,30 +829,36 @@
 
       <figure class="viz reveal">
         <div class="viz-scroll" tabindex="0" role="group" aria-label="Two-tier drawdown diagram, scrolls horizontally on narrow screens">
-          <svg viewBox="0 0 880 340" width="880" height="340" style="min-width:700px;width:100%;height:auto" role="img" aria-label="A jagged equity curve descends from peak equity through two horizontal thresholds: an amber dashed line at minus 10 percent, where entries pause and existing stops stay live, and a red solid line at minus 15 percent, where the kill switch liquidates and halts, with a manual reset. The band between the thresholds is shaded amber; the region below the kill line is shaded red. A note says the rules run identically in backtest, shadow paper, and broker paper.">
+          <svg id="fig-dd" viewBox="0 0 880 340" width="880" height="340" style="min-width:700px;width:100%;height:auto" role="img" aria-label="A jagged equity curve descends from peak equity through two horizontal thresholds: an amber dashed line at minus 10 percent, where entries pause and existing stops stay live, and a red solid line at minus 15 percent, where the kill switch liquidates and halts, with a manual reset. The band between the thresholds is shaded amber; the region below the kill line is shaded red. A note says the rules run identically in backtest, shadow paper, and broker paper. While visible, the equity curve draws left to right, each tier lights as the curve crosses it, and the halted flat line follows the kill marker; under reduced motion the figure is a single static frame.">
             <!-- peak line -->
             <line class="ln-dim" x1="60" y1="70" x2="820" y2="70" stroke-width="1" stroke-dasharray="2 5"></line>
             <text class="t-faint" x="60" y="58" font-size="10">peak equity &middot; 0%</text>
 
-            <!-- shaded band between tiers -->
-            <rect class="band" x="60" y="170" width="760" height="50" stroke="none"></rect>
-            <!-- shaded region below the kill line -->
-            <rect class="band-red" x="60" y="220" width="760" height="70" stroke="none"></rect>
+            <!-- pause tier: band, line, label -->
+            <g class="anim-dim" id="td-t10">
+              <rect class="band" x="60" y="170" width="760" height="50" stroke="none"></rect>
+              <line class="ln-amb" x1="60" y1="170" x2="820" y2="170" stroke-width="1.2" stroke-dasharray="6 5"></line>
+              <text class="t-amber" x="478" y="160" font-size="11">&minus;10% &middot; entries pause &middot; existing stops stay live</text>
+            </g>
 
-            <!-- tier lines -->
-            <line class="ln-amb" x1="60" y1="170" x2="820" y2="170" stroke-width="1.2" stroke-dasharray="6 5"></line>
-            <text class="t-amber" x="478" y="160" font-size="11">&minus;10% &middot; entries pause &middot; existing stops stay live</text>
-
-            <line class="ln-red" x1="60" y1="220" x2="820" y2="220" stroke-width="1.4"></line>
-            <text class="t-red" x="478" y="244" font-size="11">&minus;15% &middot; kill switch: liquidate + halt &middot; reset is manual</text>
+            <!-- kill tier: band, line, label -->
+            <g class="anim-dim" id="td-t15">
+              <rect class="band-red" x="60" y="220" width="760" height="70" stroke="none"></rect>
+              <line class="ln-red" x1="60" y1="220" x2="820" y2="220" stroke-width="1.4"></line>
+              <text class="t-red" x="478" y="244" font-size="11">&minus;15% &middot; kill switch: liquidate + halt &middot; reset is manual</text>
+            </g>
 
             <!-- equity curve -->
-            <polyline class="ln-dim" stroke-width="1.6" points="60,70 100,88 128,78 168,112 198,101 238,142 266,129 308,172 336,160 376,198 404,187 440,220" stroke-linejoin="round"></polyline>
-            <circle class="t-red" cx="440" cy="220" r="4.5"></circle>
-            <text class="t-red" x="430" y="206" font-size="10" text-anchor="end">kill switch fires</text>
+            <polyline id="td-eq" class="ln-dim anim-draw" style="--draw:475;--drawd:2.6s" stroke-width="1.6" points="60,70 100,88 128,78 168,112 198,101 238,142 266,129 308,172 336,160 376,198 404,187 440,220" stroke-linejoin="round"></polyline>
+            <g class="anim-fade anim-flash" id="td-kill">
+              <circle class="t-red" cx="440" cy="220" r="4.5"></circle>
+              <text class="t-red" x="430" y="206" font-size="10" text-anchor="end">kill switch fires</text>
+            </g>
             <!-- halted flat line -->
-            <line class="ln-dim" x1="440" y1="220" x2="588" y2="220" stroke-width="1" stroke-dasharray="3 5"></line>
-            <text class="t-faint" x="596" y="224" font-size="10">halted</text>
+            <g class="anim-fade" id="td-halt">
+              <line class="ln-dim" x1="440" y1="220" x2="588" y2="220" stroke-width="1" stroke-dasharray="3 5"></line>
+              <text class="t-faint" x="596" y="224" font-size="10">halted</text>
+            </g>
 
             <!-- footnote -->
             <text class="t-muted" x="60" y="312" font-size="10">runs identically in backtest, shadow paper, and broker paper</text>
@@ -904,19 +988,19 @@
       </div>
 
       <figure class="viz reveal">
-        <div class="viz-scroll" tabindex="0" role="group" aria-label="Mock terminal output of a tradinglab report with a benchmark block. The strategy trails buy-and-hold SPY and the equal-weight universe on every column, and the verdict line reads: strategy LAGS buy-and-hold SPY over this window. Scrolls horizontally on narrow screens.">
-          <pre class="term"><span class="tm-faint">$</span> <span class="tm-bone">tradinglab report</span> <span class="tm-muted">runs/sma_cross_wf/</span>
+        <div class="viz-scroll" tabindex="0" role="group" aria-label="Mock terminal output of a tradinglab report with a benchmark block. The strategy trails buy-and-hold SPY and the equal-weight universe on every column, and the verdict line reads: strategy LAGS buy-and-hold SPY over this window. The benchmark rows and the verdict line print once when the figure first scrolls into view; under reduced motion the report is a single static frame. Scrolls horizontally on narrow screens.">
+          <pre class="term" id="fig-bench"><span class="tm-faint">$</span> <span class="tm-bone">tradinglab report</span> <span class="tm-muted">runs/sma_cross_wf/</span>
 
 <span class="tm-amber">BENCHMARK</span><span class="tm-faint">  (same window &middot; same adjusted data &middot; same cost model)</span>
 
 <span class="tm-faint">                            CAGR    Sharpe    max DD</span>
-  <span class="tm-bone">strategy: sma_cross</span>       4.3%      0.41    &minus;11.8%
-  <span class="tm-muted">buy &amp; hold SPY</span>           17.1%      0.93    &minus;18.6%
-  <span class="tm-muted">equal-weight universe</span>    15.4%      0.86    &minus;20.2%
+<span class="anim-fade" id="tb-r1">  <span class="tm-bone">strategy: sma_cross</span>       4.3%      0.41    &minus;11.8%</span>
+<span class="anim-fade" id="tb-r2">  <span class="tm-muted">buy &amp; hold SPY</span>           17.1%      0.93    &minus;18.6%</span>
+<span class="anim-fade" id="tb-r3">  <span class="tm-muted">equal-weight universe</span>    15.4%      0.86    &minus;20.2%</span>
 
-  <span class="tm-muted">alpha &minus;1.9%  &middot;  beta 0.36  &middot;  up-capture 31% / down-capture 44%</span>
+  <span class="tm-muted anim-fade" id="tb-r4">alpha &minus;1.9%  &middot;  beta 0.36  &middot;  up-capture 31% / down-capture 44%</span>
 
-  <span class="tm-verdict">VERDICT: strategy LAGS buy-and-hold SPY over this window.</span> <span class="tcaret"></span></pre>
+  <span class="tm-verdict anim-fade" id="tb-v">VERDICT: strategy LAGS buy-and-hold SPY over this window.</span> <span class="tcaret" aria-hidden="true"></span></pre>
         </div>
         <figcaption>Illustrative figures, not real account data. Sharpe is return per unit of volatility; max DD is maximum drawdown. The verdict line printing is the point.</figcaption>
       </figure>
@@ -1059,7 +1143,7 @@
     var h = document.documentElement;
     var max = h.scrollHeight - h.clientHeight;
     var y = window.scrollY || h.scrollTop || 0;
-    if (bar) bar.style.width = (max > 0 ? (y / max) * 100 : 0) + "%";
+    if (bar) bar.style.transform = "scaleX(" + (max > 0 ? y / max : 0) + ")";
   }
   function onScroll() {
     if (!ticking) { ticking = true; requestAnimationFrame(paint); }
@@ -1091,12 +1175,234 @@
     revealEls.forEach(function (el) { el.classList.add("in"); });
   }
 
+  /* ================= FIGURE SCENES -- one grammar, three pages =================
+     Each animated figure registers a scene: a reset plus timed steps that only
+     toggle classes / transforms (no layout reads). One shared rAF loop runs,
+     and only while at least one scene is >=35% visible and the tab is shown.
+     Reduced motion settles every figure to its complete composed frame. */
+  var SCENES = [];
+  var sceneRaf = null;
+
+  function $one(root, s) { return root.querySelector(s); }
+  function $all(root, s) { return Array.prototype.slice.call(root.querySelectorAll(s)); }
+  function on(el)    { if (el) el.classList.add("anim-on"); }
+  function offEl(el) { if (el) el.classList.remove("anim-on"); }
+  function act(el)   { if (el) el.classList.add("anim-active"); }
+  function deact(el) { if (el) el.classList.remove("anim-active"); }
+  function dotSnap(dot, x, y) {
+    if (!dot) return;
+    dot.style.transition = "opacity .2s";
+    dot.style.transform = "translate(" + x + "px," + y + "px)";
+    on(dot);
+  }
+  function dotGlide(dot, x, y, ms) {
+    if (!dot) return;
+    dot.style.transition = "transform " + ms + "ms cubic-bezier(.65,0,.35,1), opacity .2s";
+    dot.style.transform = "translate(" + x + "px," + y + "px)";
+  }
+
+  function makeScene(id, cycle, build) {
+    var root = document.getElementById(id);
+    if (!root) return;
+    var sc = { root: root, cycle: cycle, steps: [], idx: -1, t0: 0, active: false, reset: function () {} };
+    sc.step = function (t, fn) { sc.steps.push({ t: t, fn: fn }); };
+    build(sc, root);
+    sc.steps.sort(function (a, b) { return a.t - b.t; });
+    root.__scene = sc;
+    SCENES.push(sc);
+  }
+
+  function sceneTick(now) {
+    sceneRaf = null;
+    var any = false;
+    for (var i = 0; i < SCENES.length; i++) {
+      var sc = SCENES[i];
+      if (!sc.active) continue;
+      any = true;
+      var t = now - sc.t0;
+      if (t >= sc.cycle) {
+        /* loop budget: after a few full cycles, hold the final composed
+           frame; the loop re-arms when the figure leaves and re-enters */
+        sc.loops = (sc.loops || 0) + 1;
+        if (sc.once || sc.loops >= 3) { sc.active = false; continue; }
+        sc.t0 = now; sc.idx = -1; sc.reset(); t = 0;
+      }
+      while (sc.idx + 1 < sc.steps.length && sc.steps[sc.idx + 1].t <= t) {
+        sc.idx += 1;
+        sc.steps[sc.idx].fn();
+      }
+      if (sc.once && sc.idx >= sc.steps.length - 1) { sc.active = false; sc.done = true; }
+    }
+    if (any && !document.hidden) sceneRaf = requestAnimationFrame(sceneTick);
+  }
+  function wakeScenes() {
+    if (sceneRaf === null && !document.hidden && !red()) {
+      sceneRaf = requestAnimationFrame(sceneTick);
+    }
+  }
+  function settleScenes() {
+    if (sceneRaf !== null) { cancelAnimationFrame(sceneRaf); sceneRaf = null; }
+    SCENES.forEach(function (sc) {
+      sc.active = false;
+      sc.root.classList.remove("anim-live");
+      sc.root.classList.add("anim-settled");
+      $all(sc.root, ".anim-on").forEach(offEl);
+      $all(sc.root, ".anim-active").forEach(deact);
+      $all(sc.root, ".anim-dot, .anim-slide").forEach(function (d) {
+        d.style.transition = "";
+        d.style.transform = "";
+      });
+    });
+  }
+
+  /* scene: promotion ladder -- gate arrows pulse upward rung by rung, the
+     locked live rung rattles shut, the demotion arrow sweeps down */
+  makeScene("fig-ladder", 9500, function (sc, root) {
+    var rungs  = [$one(root, "#tl-r-bt"), $one(root, "#tl-r-wf"), $one(root, "#tl-r-paper")];
+    var gates  = [$one(root, "#tl-ga1"), $one(root, "#tl-ga2"), $one(root, "#tl-ga3")];
+    var heads  = [$one(root, "#tl-gh1"), $one(root, "#tl-gh2"), $one(root, "#tl-gh3")];
+    var passes = [$one(root, "#tl-gp1"), $one(root, "#tl-gp2"), $one(root, "#tl-gp3")];
+    var live   = $one(root, "#tl-live");
+    var xm     = $one(root, "#tl-x");
+    var dem    = $one(root, "#tl-dem");
+    var demh   = $one(root, "#tl-demh");
+    var demt   = $one(root, "#tl-demt");
+    sc.reset = function () {
+      rungs.forEach(deact);
+      gates.forEach(offEl); heads.forEach(offEl); passes.forEach(offEl);
+      offEl(live); offEl(xm); offEl(dem); offEl(demh); offEl(demt);
+      act(rungs[0]);
+    };
+    sc.step(800,  function () { on(gates[0]); });
+    sc.step(1350, function () { on(heads[0]); on(passes[0]); });
+    sc.step(1700, function () { deact(rungs[0]); act(rungs[1]); });
+    sc.step(2500, function () { on(gates[1]); });
+    sc.step(3050, function () { on(heads[1]); on(passes[1]); });
+    sc.step(3400, function () { deact(rungs[1]); act(rungs[2]); });
+    /* third attempt is a denial: the gate says FAIL, a red cross flashes
+       at the padlock, and the locked rung rattles shut -- live stays empty */
+    sc.step(4200, function () { on(gates[2]); });
+    sc.step(4750, function () { on(heads[2]); on(passes[2]); });
+    sc.step(5100, function () { on(xm); });
+    sc.step(5500, function () { on(live); });
+    sc.step(6400, function () { on(dem); });
+    sc.step(7500, function () { on(demh); on(demt); });
+  });
+
+  /* scene: no-look-ahead -- signal at close t, denied same-bar arrow, arc
+     draws over the gap to the open of t+1 */
+  makeScene("fig-nolook", 7500, function (sc, root) {
+    var sig   = $one(root, "#tn-sig");
+    var fill  = $one(root, "#tn-fill");
+    var arc   = $one(root, "#tn-arc");
+    var arch  = $one(root, "#tn-arch");
+    var ghost = $one(root, "#tn-ghost");
+    var xmark = $one(root, "#tn-x");
+    sc.reset = function () {
+      [sig, fill, arc, arch, ghost, xmark].forEach(offEl);
+    };
+    sc.step(400,  function () { on(sig); });
+    sc.step(1300, function () { on(ghost); });
+    sc.step(1900, function () { on(xmark); });
+    sc.step(2900, function () { on(arc); });
+    sc.step(4300, function () { on(arch); on(fill); });
+  });
+
+  /* scene: two-tier drawdown -- the equity curve draws, the pause band lights
+     at -10%, the kill fires at -15%, the halted flat line follows */
+  makeScene("fig-dd", 9000, function (sc, root) {
+    var eq   = $one(root, "#td-eq");
+    var t10  = $one(root, "#td-t10");
+    var t15  = $one(root, "#td-t15");
+    var kill = $one(root, "#td-kill");
+    var halt = $one(root, "#td-halt");
+    sc.reset = function () {
+      [eq, t10, t15, kill, halt].forEach(offEl);
+    };
+    sc.step(300,  function () { on(eq); });
+    sc.step(1800, function () { on(t10); });
+    sc.step(2900, function () { on(t15); });
+    sc.step(3000, function () { on(kill); });
+    sc.step(3500, function () { on(halt); });
+  });
+
+  /* scene: benchmark terminal -- a one-shot reveal, not a loop: the rows
+     land, a beat, then the verdict line prints and stays */
+  makeScene("fig-bench", 4200, function (sc, root) {
+    sc.once = true;
+    var rows = [
+      $one(root, "#tb-r1"), $one(root, "#tb-r2"), $one(root, "#tb-r3"),
+      $one(root, "#tb-r4"), $one(root, "#tb-v")
+    ];
+    sc.reset = function () { rows.forEach(offEl); };
+    sc.step(400,  function () { on(rows[0]); });
+    sc.step(750,  function () { on(rows[1]); });
+    sc.step(1100, function () { on(rows[2]); });
+    sc.step(1600, function () { on(rows[3]); });
+    sc.step(2700, function () { on(rows[4]); });
+  });
+
+  /* visibility gating: run a scene only while >=35% visible and the tab shown */
+  if ("IntersectionObserver" in window && !red() && SCENES.length) {
+    var sceneIo = new IntersectionObserver(function (entries) {
+      if (red()) return;
+      entries.forEach(function (en) {
+        var sc = en.target.__scene;
+        if (!sc) return;
+        if (en.isIntersecting) {
+          if (!sc.active && !sc.done) {
+            sc.active = true;
+            sc.loops = 0;
+            sc.t0 = performance.now();
+            sc.idx = -1;
+            sc.root.classList.remove("anim-settled");
+            sc.root.classList.add("anim-live");
+            sc.reset();
+            wakeScenes();
+          }
+        } else {
+          sc.active = false;
+          /* offscreen: rest on the complete composed markup frame */
+          sc.root.classList.remove("anim-live");
+          $all(sc.root, ".anim-dot, .anim-slide").forEach(function (d) {
+            d.style.transition = "";
+            d.style.transform = "";
+          });
+        }
+      });
+    }, { threshold: 0.35 });
+    SCENES.forEach(function (sc) {
+      /* observe the un-clipped figure container: a wide svg is horizontally
+         clipped by .viz-scroll on narrow viewports and may never reach the
+         visibility threshold itself */
+      var box = (sc.root.closest && sc.root.closest(".viz")) || sc.root;
+      box.__scene = sc;
+      sceneIo.observe(box);
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        if (sceneRaf !== null) { cancelAnimationFrame(sceneRaf); sceneRaf = null; }
+      } else {
+        wakeScenes();
+      }
+    });
+  } else {
+    settleScenes();
+  }
+
   /* live reduced-motion toggle: compose the static state immediately */
   function applyRed() {
-    if (!red()) return;
-    revealEls.forEach(function (el) { el.classList.add("in"); });
+    if (red()) {
+      revealEls.forEach(function (el) { el.classList.add("in"); });
+      settleScenes();
+    } else {
+      /* motion allowed again: shed the settled state so scenes resume
+         cleanly when they re-enter the viewport */
+      SCENES.forEach(function (sc) { sc.root.classList.remove("anim-settled"); });
+    }
   }
   if (mmR.addEventListener) mmR.addEventListener("change", applyRed);
+  else if (mmR.addListener) mmR.addListener(applyRed);
 })();
 </script>
 

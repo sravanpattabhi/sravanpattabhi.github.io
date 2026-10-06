@@ -76,9 +76,10 @@
 
   /* ============ Scroll progress hairline ============ */
   #progress {
-    position: fixed; top: 0; left: 0; height: 2px; width: 0;
+    position: fixed; top: 0; left: 0; height: 2px; width: 100%;
     background: var(--amber); z-index: 60;
     box-shadow: 0 0 8px rgba(232,163,61,.55);
+    transform: scaleX(0); transform-origin: 0 0;
   }
 
   /* ============ Nav ============ */
@@ -268,7 +269,7 @@
       background: linear-gradient(to right, transparent, var(--surface));
     }
     .viz figcaption { position: relative; background: var(--surface); }
-    .viz figcaption::after { content: " \00B7 drag \2192"; color: var(--faint); }
+    .viz figcaption::after { content: " \00B7 drag \2192" / ""; color: var(--faint); }
   }
   .viz figcaption {
     font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .06em;
@@ -292,6 +293,54 @@
   .ln-amb  { stroke: var(--amber-dim); fill: none; }
   .ln-red  { stroke: var(--red); fill: none; }
   .band    { fill: rgba(232,163,61,.07); stroke: var(--amber-dim); }
+
+  /* ============ Figure scenes -- one animation grammar across the site ============ */
+  /* The markup is the complete, composed figure. The scene driver adds .anim-live
+     to an svg while its loop runs, and .anim-settled under reduced motion; with
+     no JS nothing is hidden. Packet dots are decorative and stay aria-hidden. */
+  .anim-node rect { transition: stroke .55s var(--ease-inout); }
+  .anim-node text { transition: fill .55s var(--ease-inout); }
+  .anim-live .anim-node rect { stroke: var(--line); }
+  .anim-live .anim-node.anim-active rect { stroke: var(--amber-dim); }
+  .anim-live .anim-node .anim-hot { fill: var(--muted); }
+  .anim-live .anim-node.anim-active .anim-hot { fill: var(--amber); }
+  .anim-settled .anim-node rect { stroke: var(--amber-dim); }
+
+  .anim-dot { opacity: 0; }
+  .anim-live .anim-dot.anim-on { opacity: 1; }
+
+  .anim-live .anim-fade { opacity: 0; transition: opacity .5s var(--ease-out); }
+  .anim-live .anim-fade.anim-on { opacity: 1; }
+  .anim-live .anim-dim { opacity: .3; transition: opacity .5s var(--ease-out); }
+  .anim-live .anim-dim.anim-on { opacity: 1; }
+
+  .anim-live .anim-draw {
+    stroke-dasharray: var(--draw, 600);
+    stroke-dashoffset: var(--draw, 600);
+  }
+  .anim-live .anim-draw.anim-on {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset var(--drawd, 1.1s) var(--ease-inout);
+  }
+
+  .anim-live .anim-amp { stroke: var(--amber-dim); transition: stroke .6s var(--ease-inout); }
+  .anim-live .anim-amp.anim-on { stroke: var(--amber); }
+
+  .anim-live .anim-slide { transition: transform .35s var(--ease-inout); }
+
+  .anim-live .anim-flash.anim-on { animation: scene-flash 1s var(--ease-out) 1; }
+  @keyframes scene-flash { 0% { opacity: .1; } 40% { opacity: 1; } 65% { opacity: .35; } 100% { opacity: 1; } }
+
+  .anim-live .anim-rattle.anim-on { animation: scene-rattle .7s var(--ease-inout) 1; }
+  @keyframes scene-rattle {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-2px); }
+    45% { transform: translateX(2px); }
+    70% { transform: translateX(-1px); }
+  }
+
+  .anim-live .anim-drop { transform: translateY(-10px); }
+  .anim-live .anim-drop.anim-on { transform: translateY(0); transition: transform .45s var(--ease-out), opacity .45s var(--ease-out); }
 
   /* ============ Triage ledger (terminal/report voice) ============ */
   .ledger {
@@ -392,6 +441,15 @@
     .reveal { opacity: 1; transform: none; transition: none; }
     .sec-head::after { transform: scaleX(1); transition: none; }
     .nav-links a, .nav-links a::after, .cta, .cta .cta-arr, .back-link { transition: none; }
+    /* figure scenes settle to the complete composed frame, no motion */
+    .anim-node rect, .anim-node text { transition: none; }
+    .anim-live .anim-fade, .anim-live .anim-dim { opacity: 1; transition: none; }
+    .anim-live .anim-draw, .anim-live .anim-draw.anim-on { stroke-dasharray: none; stroke-dashoffset: 0; transition: none; }
+    .anim-live .anim-amp { stroke: var(--amber-dim); transition: none; }
+    .anim-live .anim-slide { transition: none; }
+    .anim-live .anim-flash.anim-on, .anim-live .anim-rattle.anim-on { animation: none; }
+    .anim-live .anim-drop, .anim-live .anim-drop.anim-on { transform: none; transition: none; }
+    .anim-live .anim-dot.anim-on { opacity: 0; transition: none; }
   }
 </style>
 <noscript><style>
@@ -409,7 +467,7 @@
     <ul class="nav-links">
       <li><a href="cairn.html">Cairn</a></li>
       <li><a href="trading-lab.html">Trading Lab</a></li>
-      <li><a class="cur" aria-current="true" href="how-i-build.html">Method</a></li>
+      <li><a class="cur" aria-current="page" href="how-i-build.html">Method</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
   </div>
@@ -564,10 +622,12 @@
 
       <figure class="viz reveal">
         <div class="viz-scroll" tabindex="0" role="group" aria-label="Run-shape diagram, scrolls horizontally on narrow screens">
-          <svg viewBox="0 0 1280 440" width="1280" height="440" style="min-width:920px;width:100%;height:auto" role="img" aria-label="Run-shape diagram, left to right. A brief fans out to two parallel scout boxes, analyst repo A and analyst repo B. A dashed barrier line follows, then a fan-out to three writer boxes with assigned angles: minimalist, vivid imagery, recruiter-opt. A judge box notes all options in, kills cliches, duplicates, fabrication-adjacent. Then a builder, then a second barrier, then a full-height amber review gate band holding four stacked lens boxes: correctness, design, first-glance, sensitivity. Then a fixer, then ship. A bracket beneath the full pipeline through ship is labeled scripted: phases, fan-out, barriers. Amber diamonds at the brief, at the judge's criteria, and after the gate are jointly labeled human: brief, criteria, triage.">
+          <svg id="fig-run" viewBox="0 0 1280 440" width="1280" height="440" style="min-width:920px;width:100%;height:auto" role="img" aria-label="Run-shape diagram, left to right. A brief fans out to two parallel scout boxes, analyst repo A and analyst repo B. A dashed barrier line follows, then a fan-out to three writer boxes with assigned angles: minimalist, vivid imagery, recruiter-opt. A judge box notes all options in, kills cliches, duplicates, fabrication-adjacent. Then a builder, then a second barrier, then a full-height amber review gate band holding four stacked lens boxes: correctness, design, first-glance, sensitivity. Then a fixer, then ship. A bracket beneath the full pipeline through ship is labeled scripted: phases, fan-out, barriers. Amber diamonds at the brief, at the judge's criteria, and after the gate are jointly labeled human: brief, criteria, triage. While visible, activation sweeps the pipeline left to right with dots traveling the edges and the human diamonds glowing at their phases; under reduced motion the figure is a single static frame.">
             <!-- BRIEF -->
-            <rect class="bx-hot" x="16" y="150" width="86" height="46" rx="3"></rect>
-            <text class="t-bone" x="59" y="177" font-size="11" text-anchor="middle" letter-spacing="1">BRIEF</text>
+            <g class="anim-node" id="hr-brief">
+              <rect class="bx-hot" x="16" y="150" width="86" height="46" rx="3"></rect>
+              <text class="t-bone anim-hot" x="59" y="177" font-size="11" text-anchor="middle" letter-spacing="1">BRIEF</text>
+            </g>
 
             <!-- fan-out to scouts -->
             <g class="ln-dim" stroke-width="1">
@@ -578,17 +638,22 @@
             </g>
 
             <!-- SCOUTS -->
-            <rect class="bx" x="150" y="94" width="168" height="52" rx="3"></rect>
-            <text class="t-bone" x="234" y="114" font-size="11" text-anchor="middle" letter-spacing="1">SCOUT</text>
-            <text class="t-muted" x="234" y="132" font-size="11" text-anchor="middle">analyst &middot; repo A</text>
-
-            <rect class="bx" x="150" y="200" width="168" height="52" rx="3"></rect>
-            <text class="t-bone" x="234" y="220" font-size="11" text-anchor="middle" letter-spacing="1">SCOUT</text>
-            <text class="t-muted" x="234" y="238" font-size="11" text-anchor="middle">analyst &middot; repo B</text>
+            <g class="anim-node" id="hr-sa">
+              <rect class="bx" x="150" y="94" width="168" height="52" rx="3"></rect>
+              <text class="t-bone anim-hot" x="234" y="114" font-size="11" text-anchor="middle" letter-spacing="1">SCOUT</text>
+              <text class="t-muted" x="234" y="132" font-size="11" text-anchor="middle">analyst &middot; repo A</text>
+            </g>
+            <g class="anim-node" id="hr-sb">
+              <rect class="bx" x="150" y="200" width="168" height="52" rx="3"></rect>
+              <text class="t-bone anim-hot" x="234" y="220" font-size="11" text-anchor="middle" letter-spacing="1">SCOUT</text>
+              <text class="t-muted" x="234" y="238" font-size="11" text-anchor="middle">analyst &middot; repo B</text>
+            </g>
 
             <!-- barrier 1 -->
-            <line class="ln-dim" x1="348" y1="62" x2="348" y2="300" stroke-width="1" stroke-dasharray="4 6"></line>
-            <text class="t-faint" x="348" y="48" font-size="11" text-anchor="middle" letter-spacing="2">BARRIER</text>
+            <g class="anim-flash" id="hr-bar1">
+              <line class="ln-dim" x1="348" y1="62" x2="348" y2="300" stroke-width="1" stroke-dasharray="4 6"></line>
+              <text class="t-faint" x="348" y="48" font-size="11" text-anchor="middle" letter-spacing="2">BARRIER</text>
+            </g>
 
             <g class="ln-dim" stroke-width="1">
               <line x1="318" y1="120" x2="344" y2="120"></line>
@@ -602,17 +667,21 @@
             </g>
 
             <!-- WRITERS -->
-            <rect class="bx" x="380" y="70" width="180" height="48" rx="3"></rect>
-            <text class="t-bone" x="398" y="90" font-size="11" letter-spacing="1">WRITER</text>
-            <text class="t-muted" x="398" y="107" font-size="11">minimalist</text>
-
-            <rect class="bx" x="380" y="148" width="180" height="48" rx="3"></rect>
-            <text class="t-bone" x="398" y="168" font-size="11" letter-spacing="1">WRITER</text>
-            <text class="t-muted" x="398" y="185" font-size="11">vivid imagery</text>
-
-            <rect class="bx" x="380" y="226" width="180" height="48" rx="3"></rect>
-            <text class="t-bone" x="398" y="246" font-size="11" letter-spacing="1">WRITER</text>
-            <text class="t-muted" x="398" y="263" font-size="11">recruiter-opt</text>
+            <g class="anim-node" id="hr-w1">
+              <rect class="bx" x="380" y="70" width="180" height="48" rx="3"></rect>
+              <text class="t-bone anim-hot" x="398" y="90" font-size="11" letter-spacing="1">WRITER</text>
+              <text class="t-muted" x="398" y="107" font-size="11">minimalist</text>
+            </g>
+            <g class="anim-node" id="hr-w2">
+              <rect class="bx" x="380" y="148" width="180" height="48" rx="3"></rect>
+              <text class="t-bone anim-hot" x="398" y="168" font-size="11" letter-spacing="1">WRITER</text>
+              <text class="t-muted" x="398" y="185" font-size="11">vivid imagery</text>
+            </g>
+            <g class="anim-node" id="hr-w3">
+              <rect class="bx" x="380" y="226" width="180" height="48" rx="3"></rect>
+              <text class="t-bone anim-hot" x="398" y="246" font-size="11" letter-spacing="1">WRITER</text>
+              <text class="t-muted" x="398" y="263" font-size="11">recruiter-opt</text>
+            </g>
 
             <!-- writers converge to JUDGE -->
             <g class="ln-dim" stroke-width="1" fill="none">
@@ -625,14 +694,18 @@
             </g>
 
             <!-- JUDGE -->
-            <rect class="bx" x="604" y="148" width="104" height="48" rx="3"></rect>
-            <text class="t-bone" x="656" y="176" font-size="11" text-anchor="middle" letter-spacing="1">JUDGE</text>
-            <g font-size="11" text-anchor="middle">
-              <text class="t-faint" x="656" y="300">all options in</text>
-              <text class="t-faint" x="656" y="316">kills cliches, duplicates,</text>
-              <text class="t-faint" x="656" y="332">fabrication-adjacent</text>
+            <g class="anim-node" id="hr-judge">
+              <rect class="bx" x="604" y="148" width="104" height="48" rx="3"></rect>
+              <text class="t-bone anim-hot" x="656" y="176" font-size="11" text-anchor="middle" letter-spacing="1">JUDGE</text>
             </g>
-            <line class="ln-dim" x1="656" y1="200" x2="656" y2="286" stroke-width="1" stroke-dasharray="2 5"></line>
+            <g class="anim-dim" id="hr-crit">
+              <g font-size="11" text-anchor="middle">
+                <text class="t-faint" x="656" y="300">all options in</text>
+                <text class="t-faint" x="656" y="316">kills cliches, duplicates,</text>
+                <text class="t-faint" x="656" y="332">fabrication-adjacent</text>
+              </g>
+              <line class="ln-dim" x1="656" y1="200" x2="656" y2="286" stroke-width="1" stroke-dasharray="2 5"></line>
+            </g>
 
             <!-- JUDGE -> BUILDER -->
             <g class="ln-dim" stroke-width="1">
@@ -641,12 +714,16 @@
             </g>
 
             <!-- BUILDER -->
-            <rect class="bx" x="748" y="148" width="112" height="48" rx="3"></rect>
-            <text class="t-bone" x="804" y="176" font-size="11" text-anchor="middle" letter-spacing="1">BUILDER</text>
+            <g class="anim-node" id="hr-build">
+              <rect class="bx" x="748" y="148" width="112" height="48" rx="3"></rect>
+              <text class="t-bone anim-hot" x="804" y="176" font-size="11" text-anchor="middle" letter-spacing="1">BUILDER</text>
+            </g>
 
             <!-- barrier 2 -->
-            <line class="ln-dim" x1="884" y1="62" x2="884" y2="300" stroke-width="1" stroke-dasharray="4 6"></line>
-            <text class="t-faint" x="884" y="48" font-size="11" text-anchor="middle" letter-spacing="2">BARRIER</text>
+            <g class="anim-flash" id="hr-bar2">
+              <line class="ln-dim" x1="884" y1="62" x2="884" y2="300" stroke-width="1" stroke-dasharray="4 6"></line>
+              <text class="t-faint" x="884" y="48" font-size="11" text-anchor="middle" letter-spacing="2">BARRIER</text>
+            </g>
 
             <!-- BUILDER -> gate -->
             <g class="ln-dim" stroke-width="1">
@@ -655,17 +732,27 @@
             </g>
 
             <!-- REVIEW GATE band -->
-            <rect class="band" x="900" y="44" width="172" height="276" rx="3"></rect>
-            <text class="t-amber" x="986" y="68" font-size="11" text-anchor="middle" letter-spacing="2">REVIEW GATE</text>
+            <g class="anim-dim" id="hr-gate">
+              <rect class="band" x="900" y="44" width="172" height="276" rx="3"></rect>
+              <text class="t-amber" x="986" y="68" font-size="11" text-anchor="middle" letter-spacing="2">REVIEW GATE</text>
+            </g>
             <g font-size="11" text-anchor="middle">
-              <rect class="bx" x="916" y="82" width="140" height="36" rx="3"></rect>
-              <text class="t-bone" x="986" y="104">correctness</text>
-              <rect class="bx" x="916" y="140" width="140" height="36" rx="3"></rect>
-              <text class="t-bone" x="986" y="162">design</text>
-              <rect class="bx" x="916" y="198" width="140" height="36" rx="3"></rect>
-              <text class="t-bone" x="986" y="220">first-glance</text>
-              <rect class="bx" x="916" y="256" width="140" height="36" rx="3"></rect>
-              <text class="t-bone" x="986" y="278">sensitivity</text>
+              <g class="anim-node hr-lens">
+                <rect class="bx" x="916" y="82" width="140" height="36" rx="3"></rect>
+                <text class="t-bone anim-hot" x="986" y="104">correctness</text>
+              </g>
+              <g class="anim-node hr-lens">
+                <rect class="bx" x="916" y="140" width="140" height="36" rx="3"></rect>
+                <text class="t-bone anim-hot" x="986" y="162">design</text>
+              </g>
+              <g class="anim-node hr-lens">
+                <rect class="bx" x="916" y="198" width="140" height="36" rx="3"></rect>
+                <text class="t-bone anim-hot" x="986" y="220">first-glance</text>
+              </g>
+              <g class="anim-node hr-lens">
+                <rect class="bx" x="916" y="256" width="140" height="36" rx="3"></rect>
+                <text class="t-bone anim-hot" x="986" y="278">sensitivity</text>
+              </g>
             </g>
 
             <!-- gate -> FIXER -> SHIP -->
@@ -675,10 +762,14 @@
               <line x1="1184" y1="172" x2="1204" y2="172"></line>
               <polyline points="1199,168 1204,172 1199,176"></polyline>
             </g>
-            <rect class="bx" x="1104" y="148" width="80" height="48" rx="3"></rect>
-            <text class="t-bone" x="1144" y="176" font-size="11" text-anchor="middle" letter-spacing="1">FIXER</text>
-            <rect class="bx-hot" x="1208" y="148" width="64" height="48" rx="3"></rect>
-            <text class="t-amber" x="1240" y="176" font-size="11" text-anchor="middle" letter-spacing="1">SHIP</text>
+            <g class="anim-node" id="hr-fix">
+              <rect class="bx" x="1104" y="148" width="80" height="48" rx="3"></rect>
+              <text class="t-bone anim-hot" x="1144" y="176" font-size="11" text-anchor="middle" letter-spacing="1">FIXER</text>
+            </g>
+            <g class="anim-node" id="hr-ship">
+              <rect class="bx-hot" x="1208" y="148" width="64" height="48" rx="3"></rect>
+              <text class="t-amber anim-hot" x="1240" y="176" font-size="11" text-anchor="middle" letter-spacing="1">SHIP</text>
+            </g>
 
             <!-- scripted bracket -->
             <g class="ln-dim" stroke-width="1">
@@ -690,10 +781,15 @@
 
             <!-- human diamonds -->
             <line class="ln-amb" x1="59" y1="412" x2="1088" y2="412" stroke-width="1" stroke-dasharray="2 6"></line>
-            <path class="t-amber" d="M 59 406 L 65 412 L 59 418 L 53 412 Z"></path>
-            <path class="t-amber" d="M 656 406 L 662 412 L 656 418 L 650 412 Z"></path>
-            <path class="t-amber" d="M 1088 406 L 1094 412 L 1088 418 L 1082 412 Z"></path>
+            <path class="t-amber anim-dim" id="hr-d1" d="M 59 406 L 65 412 L 59 418 L 53 412 Z"></path>
+            <path class="t-amber anim-dim" id="hr-d2" d="M 656 406 L 662 412 L 656 418 L 650 412 Z"></path>
+            <path class="t-amber anim-dim" id="hr-d3" d="M 1088 406 L 1094 412 L 1088 418 L 1082 412 Z"></path>
             <text class="t-amber" x="1272" y="434" font-size="11" letter-spacing="1" text-anchor="end">human: brief &middot; criteria &middot; triage</text>
+
+            <!-- packet dots -->
+            <circle class="anim-dot t-amber" id="hr-dot1" cx="0" cy="0" r="3" aria-hidden="true"></circle>
+            <circle class="anim-dot t-amber" id="hr-dot2" cx="0" cy="0" r="3" aria-hidden="true"></circle>
+            <circle class="anim-dot t-amber" id="hr-dot3" cx="0" cy="0" r="3" aria-hidden="true"></circle>
           </svg>
         </div>
         <figcaption>Agents execute inside the shape; the shape is a script; the judgment calls are mine.</figcaption>
@@ -793,71 +889,89 @@
 
       <figure class="viz reveal">
         <div class="viz-scroll" tabindex="0" role="group" aria-label="Kill-and-resume timeline, scrolls horizontally on narrow screens">
-          <svg viewBox="0 0 980 340" width="980" height="340" style="min-width:860px;width:100%;height:auto" role="img" aria-label="Kill-and-resume timeline. Top track: nine agent boxes completing left to right, the ninth dashed and incomplete. Each of the first eight drops an amber diamond tick into an append-only journal band below as its result lands. A red X between the eighth and ninth boxes is labeled stray click, run killed. A resume arrow rises from the journal band, holding eight amber ticks, into a single re-run box labeled final stage only, 8 of 9 recovered from journal. An annotation reads cost: minutes, not the afternoon.">
+          <svg id="fig-kill" viewBox="0 0 980 340" width="980" height="340" style="min-width:860px;width:100%;height:auto" role="img" aria-label="Kill-and-resume timeline. Top track: nine agent boxes completing left to right, the ninth dashed and incomplete. Each of the first eight drops an amber diamond tick into an append-only journal band below as its result lands. A red X between the eighth and ninth boxes is labeled stray click, run killed. A resume arrow leads from the journal band, holding eight amber ticks, down into a single re-run box labeled final stage only, 8 of 9 recovered from journal. An annotation reads cost: minutes, not the afternoon. While visible, the agents complete one by one dropping their ticks into the journal, the kill flashes at the ninth, and the resume arrow draws into the re-run box; under reduced motion the figure is a single static frame.">
             <!-- agent boxes -->
             <g font-size="10" text-anchor="middle">
-              <rect class="bx" x="24" y="36" width="78" height="34" rx="3"></rect>
-              <text class="t-muted" x="63" y="57">A1</text>
-              <rect class="bx" x="128" y="36" width="78" height="34" rx="3"></rect>
-              <text class="t-muted" x="167" y="57">A2</text>
-              <rect class="bx" x="232" y="36" width="78" height="34" rx="3"></rect>
-              <text class="t-muted" x="271" y="57">A3</text>
-              <rect class="bx" x="336" y="36" width="78" height="34" rx="3"></rect>
-              <text class="t-muted" x="375" y="57">A4</text>
-              <rect class="bx" x="440" y="36" width="78" height="34" rx="3"></rect>
-              <text class="t-muted" x="479" y="57">A5</text>
-              <rect class="bx" x="544" y="36" width="78" height="34" rx="3"></rect>
-              <text class="t-muted" x="583" y="57">A6</text>
-              <rect class="bx" x="648" y="36" width="78" height="34" rx="3"></rect>
-              <text class="t-muted" x="687" y="57">A7</text>
-              <rect class="bx" x="752" y="36" width="78" height="34" rx="3"></rect>
-              <text class="t-muted" x="791" y="57">A8</text>
+              <g class="anim-node hk-agent">
+                <rect class="bx" x="24" y="36" width="78" height="34" rx="3"></rect>
+                <text class="t-muted" x="63" y="57">A1</text>
+              </g>
+              <g class="anim-node hk-agent">
+                <rect class="bx" x="128" y="36" width="78" height="34" rx="3"></rect>
+                <text class="t-muted" x="167" y="57">A2</text>
+              </g>
+              <g class="anim-node hk-agent">
+                <rect class="bx" x="232" y="36" width="78" height="34" rx="3"></rect>
+                <text class="t-muted" x="271" y="57">A3</text>
+              </g>
+              <g class="anim-node hk-agent">
+                <rect class="bx" x="336" y="36" width="78" height="34" rx="3"></rect>
+                <text class="t-muted" x="375" y="57">A4</text>
+              </g>
+              <g class="anim-node hk-agent">
+                <rect class="bx" x="440" y="36" width="78" height="34" rx="3"></rect>
+                <text class="t-muted" x="479" y="57">A5</text>
+              </g>
+              <g class="anim-node hk-agent">
+                <rect class="bx" x="544" y="36" width="78" height="34" rx="3"></rect>
+                <text class="t-muted" x="583" y="57">A6</text>
+              </g>
+              <g class="anim-node hk-agent">
+                <rect class="bx" x="648" y="36" width="78" height="34" rx="3"></rect>
+                <text class="t-muted" x="687" y="57">A7</text>
+              </g>
+              <g class="anim-node hk-agent">
+                <rect class="bx" x="752" y="36" width="78" height="34" rx="3"></rect>
+                <text class="t-muted" x="791" y="57">A8</text>
+              </g>
               <rect class="bx-off" x="856" y="36" width="78" height="34" rx="3"></rect>
               <text class="t-faint" x="895" y="57">A9</text>
             </g>
 
             <!-- kill marker -->
-            <g class="ln-red" stroke-width="1.4">
+            <g class="ln-red anim-fade anim-flash" id="hk-x" stroke-width="1.4">
               <line x1="836" y1="46" x2="850" y2="60"></line>
               <line x1="850" y1="46" x2="836" y2="60"></line>
             </g>
-            <text class="t-red" x="934" y="20" font-size="10" text-anchor="end">stray click &middot; run killed</text>
+            <text class="t-red anim-fade" id="hk-xt" x="934" y="20" font-size="10" text-anchor="end">stray click &middot; run killed</text>
 
             <!-- drop lines into journal -->
             <g class="ln-dim" stroke-width="1" stroke-dasharray="2 4">
-              <line x1="63" y1="70" x2="63" y2="140"></line>
-              <line x1="167" y1="70" x2="167" y2="140"></line>
-              <line x1="271" y1="70" x2="271" y2="140"></line>
-              <line x1="375" y1="70" x2="375" y2="140"></line>
-              <line x1="479" y1="70" x2="479" y2="140"></line>
-              <line x1="583" y1="70" x2="583" y2="140"></line>
-              <line x1="687" y1="70" x2="687" y2="140"></line>
-              <line x1="791" y1="70" x2="791" y2="140"></line>
+              <line class="hk-line anim-fade" x1="63" y1="70" x2="63" y2="140"></line>
+              <line class="hk-line anim-fade" x1="167" y1="70" x2="167" y2="140"></line>
+              <line class="hk-line anim-fade" x1="271" y1="70" x2="271" y2="140"></line>
+              <line class="hk-line anim-fade" x1="375" y1="70" x2="375" y2="140"></line>
+              <line class="hk-line anim-fade" x1="479" y1="70" x2="479" y2="140"></line>
+              <line class="hk-line anim-fade" x1="583" y1="70" x2="583" y2="140"></line>
+              <line class="hk-line anim-fade" x1="687" y1="70" x2="687" y2="140"></line>
+              <line class="hk-line anim-fade" x1="791" y1="70" x2="791" y2="140"></line>
             </g>
 
             <!-- journal band -->
             <rect class="band" x="24" y="142" width="884" height="56" rx="3"></rect>
             <text class="t-amber" x="38" y="162" font-size="10" letter-spacing="2">JOURNAL &middot; APPEND-ONLY</text>
             <g class="t-amber">
-              <path d="M 63 179 L 68 184 L 63 189 L 58 184 Z"></path>
-              <path d="M 167 179 L 172 184 L 167 189 L 162 184 Z"></path>
-              <path d="M 271 179 L 276 184 L 271 189 L 266 184 Z"></path>
-              <path d="M 375 179 L 380 184 L 375 189 L 370 184 Z"></path>
-              <path d="M 479 179 L 484 184 L 479 189 L 474 184 Z"></path>
-              <path d="M 583 179 L 588 184 L 583 189 L 578 184 Z"></path>
-              <path d="M 687 179 L 692 184 L 687 189 L 682 184 Z"></path>
-              <path d="M 791 179 L 796 184 L 791 189 L 786 184 Z"></path>
+              <path class="hk-drop anim-fade anim-drop" d="M 63 179 L 68 184 L 63 189 L 58 184 Z"></path>
+              <path class="hk-drop anim-fade anim-drop" d="M 167 179 L 172 184 L 167 189 L 162 184 Z"></path>
+              <path class="hk-drop anim-fade anim-drop" d="M 271 179 L 276 184 L 271 189 L 266 184 Z"></path>
+              <path class="hk-drop anim-fade anim-drop" d="M 375 179 L 380 184 L 375 189 L 370 184 Z"></path>
+              <path class="hk-drop anim-fade anim-drop" d="M 479 179 L 484 184 L 479 189 L 474 184 Z"></path>
+              <path class="hk-drop anim-fade anim-drop" d="M 583 179 L 588 184 L 583 189 L 578 184 Z"></path>
+              <path class="hk-drop anim-fade anim-drop" d="M 687 179 L 692 184 L 687 189 L 682 184 Z"></path>
+              <path class="hk-drop anim-fade anim-drop" d="M 791 179 L 796 184 L 791 189 L 786 184 Z"></path>
             </g>
 
             <!-- resume arrow into re-run -->
-            <path class="ln-amb" d="M 470 200 C 490 234, 516 262, 552 272" stroke-width="1.2"></path>
-            <polyline class="ln-amb" points="544,267 553,272 545,276" stroke-width="1.2"></polyline>
-            <rect class="bx-hot" x="560" y="246" width="300" height="56" rx="3"></rect>
-            <text class="t-bone" x="580" y="270" font-size="11" letter-spacing="1">RE-RUN</text>
-            <text class="t-muted" x="580" y="288" font-size="10">final stage only &middot; 8/9 recovered from journal</text>
+            <path id="hk-res" class="ln-amb anim-draw" style="--draw:120;--drawd:.9s" d="M 470 200 C 490 234, 516 262, 552 272" stroke-width="1.2"></path>
+            <polyline id="hk-resh" class="ln-amb anim-fade" points="544,267 553,272 545,276" stroke-width="1.2"></polyline>
+            <g class="anim-node" id="hk-rerun">
+              <rect class="bx-hot" x="560" y="246" width="300" height="56" rx="3"></rect>
+              <text class="t-bone anim-hot" x="580" y="270" font-size="11" letter-spacing="1">RE-RUN</text>
+              <text class="t-muted" x="580" y="288" font-size="10">final stage only &middot; 8/9 recovered from journal</text>
+            </g>
 
             <!-- cost annotation -->
-            <text class="t-muted" x="860" y="324" font-size="10" text-anchor="end">cost: minutes, not the afternoon</text>
+            <text class="t-muted anim-dim" id="hk-cost" x="860" y="324" font-size="10" text-anchor="end">cost: minutes, not the afternoon</text>
           </svg>
         </div>
         <figcaption>Results are journaled as they land &mdash; an interrupted run resumes from the last barrier.</figcaption>
@@ -1060,7 +1174,7 @@
     var h = document.documentElement;
     var max = h.scrollHeight - h.clientHeight;
     var y = window.scrollY || h.scrollTop || 0;
-    if (bar) bar.style.width = (max > 0 ? (y / max) * 100 : 0) + "%";
+    if (bar) bar.style.transform = "scaleX(" + (max > 0 ? y / max : 0) + ")";
   }
   function onScroll() {
     if (!ticking) { ticking = true; requestAnimationFrame(paint); }
@@ -1092,12 +1206,225 @@
     revealEls.forEach(function (el) { el.classList.add("in"); });
   }
 
+  /* ================= FIGURE SCENES -- one grammar, three pages =================
+     Each animated figure registers a scene: a reset plus timed steps that only
+     toggle classes / transforms (no layout reads). One shared rAF loop runs,
+     and only while at least one scene is >=35% visible and the tab is shown.
+     Reduced motion settles every figure to its complete composed frame. */
+  var SCENES = [];
+  var sceneRaf = null;
+
+  function $one(root, s) { return root.querySelector(s); }
+  function $all(root, s) { return Array.prototype.slice.call(root.querySelectorAll(s)); }
+  function on(el)    { if (el) el.classList.add("anim-on"); }
+  function offEl(el) { if (el) el.classList.remove("anim-on"); }
+  function act(el)   { if (el) el.classList.add("anim-active"); }
+  function deact(el) { if (el) el.classList.remove("anim-active"); }
+  function dotSnap(dot, x, y) {
+    if (!dot) return;
+    dot.style.transition = "opacity .2s";
+    dot.style.transform = "translate(" + x + "px," + y + "px)";
+    on(dot);
+  }
+  function dotGlide(dot, x, y, ms) {
+    if (!dot) return;
+    dot.style.transition = "transform " + ms + "ms cubic-bezier(.65,0,.35,1), opacity .2s";
+    dot.style.transform = "translate(" + x + "px," + y + "px)";
+  }
+
+  function makeScene(id, cycle, build) {
+    var root = document.getElementById(id);
+    if (!root) return;
+    var sc = { root: root, cycle: cycle, steps: [], idx: -1, t0: 0, active: false, reset: function () {} };
+    sc.step = function (t, fn) { sc.steps.push({ t: t, fn: fn }); };
+    build(sc, root);
+    sc.steps.sort(function (a, b) { return a.t - b.t; });
+    root.__scene = sc;
+    SCENES.push(sc);
+  }
+
+  function sceneTick(now) {
+    sceneRaf = null;
+    var any = false;
+    for (var i = 0; i < SCENES.length; i++) {
+      var sc = SCENES[i];
+      if (!sc.active) continue;
+      any = true;
+      var t = now - sc.t0;
+      if (t >= sc.cycle) {
+        /* loop budget: after a few full cycles, hold the final composed
+           frame; the loop re-arms when the figure leaves and re-enters */
+        sc.loops = (sc.loops || 0) + 1;
+        if (sc.once || sc.loops >= 3) { sc.active = false; continue; }
+        sc.t0 = now; sc.idx = -1; sc.reset(); t = 0;
+      }
+      while (sc.idx + 1 < sc.steps.length && sc.steps[sc.idx + 1].t <= t) {
+        sc.idx += 1;
+        sc.steps[sc.idx].fn();
+      }
+      if (sc.once && sc.idx >= sc.steps.length - 1) { sc.active = false; sc.done = true; }
+    }
+    if (any && !document.hidden) sceneRaf = requestAnimationFrame(sceneTick);
+  }
+  function wakeScenes() {
+    if (sceneRaf === null && !document.hidden && !red()) {
+      sceneRaf = requestAnimationFrame(sceneTick);
+    }
+  }
+  function settleScenes() {
+    if (sceneRaf !== null) { cancelAnimationFrame(sceneRaf); sceneRaf = null; }
+    SCENES.forEach(function (sc) {
+      sc.active = false;
+      sc.root.classList.remove("anim-live");
+      sc.root.classList.add("anim-settled");
+      $all(sc.root, ".anim-on").forEach(offEl);
+      $all(sc.root, ".anim-active").forEach(deact);
+      $all(sc.root, ".anim-dot, .anim-slide").forEach(function (d) {
+        d.style.transition = "";
+        d.style.transform = "";
+      });
+    });
+  }
+
+  /* scene: run shape -- activation sweeps brief to ship with dots on the
+     edges; the human diamonds glow as their phase arrives */
+  makeScene("fig-run", 10000, function (sc, root) {
+    var nd = {
+      brief: $one(root, "#hr-brief"), sa: $one(root, "#hr-sa"), sb: $one(root, "#hr-sb"),
+      w1: $one(root, "#hr-w1"), w2: $one(root, "#hr-w2"), w3: $one(root, "#hr-w3"),
+      judge: $one(root, "#hr-judge"), build: $one(root, "#hr-build"),
+      fix: $one(root, "#hr-fix"), ship: $one(root, "#hr-ship")
+    };
+    var nodes  = [nd.brief, nd.sa, nd.sb, nd.w1, nd.w2, nd.w3, nd.judge, nd.build, nd.fix, nd.ship];
+    var lenses = $all(root, ".hr-lens");
+    var gate   = $one(root, "#hr-gate");
+    var crit   = $one(root, "#hr-crit");
+    var bars   = [$one(root, "#hr-bar1"), $one(root, "#hr-bar2")];
+    var dias   = [$one(root, "#hr-d1"), $one(root, "#hr-d2"), $one(root, "#hr-d3")];
+    var dots   = [$one(root, "#hr-dot1"), $one(root, "#hr-dot2"), $one(root, "#hr-dot3")];
+    sc.reset = function () {
+      nodes.forEach(deact); lenses.forEach(deact);
+      [gate, crit, bars[0], bars[1], dias[0], dias[1], dias[2]].forEach(offEl);
+      dots.forEach(offEl);
+      act(nd.brief); on(dias[0]);
+    };
+    /* sweep compressed so the finished pipeline rests ~2.4s before the wipe */
+    sc.step(480,  function () { dotSnap(dots[0], 102, 166); dotSnap(dots[1], 102, 180); });
+    sc.step(590,  function () { dotGlide(dots[0], 146, 124, 420); dotGlide(dots[1], 146, 222, 420); });
+    sc.step(1050, function () { act(nd.sa); act(nd.sb); offEl(dots[0]); offEl(dots[1]); });
+    sc.step(1520, function () { on(bars[0]); });
+    sc.step(1920, function () { dotSnap(dots[0], 352, 94); dotSnap(dots[1], 352, 172); dotSnap(dots[2], 352, 250); });
+    sc.step(2030, function () { dotGlide(dots[0], 376, 94, 300); dotGlide(dots[1], 376, 172, 300); dotGlide(dots[2], 376, 250, 300); });
+    sc.step(2360, function () { act(nd.w1); act(nd.w2); act(nd.w3); dots.forEach(offEl); });
+    sc.step(2960, function () { dotSnap(dots[0], 560, 94); dotSnap(dots[1], 560, 172); dotSnap(dots[2], 560, 250); });
+    sc.step(3070, function () { dotGlide(dots[0], 600, 166, 450); dotGlide(dots[1], 600, 172, 450); dotGlide(dots[2], 600, 178, 450); });
+    sc.step(3550, function () { act(nd.judge); on(dias[1]); on(crit); dots.forEach(offEl); });
+    sc.step(4080, function () { dotSnap(dots[0], 708, 172); });
+    sc.step(4190, function () { dotGlide(dots[0], 744, 172, 300); });
+    sc.step(4520, function () { act(nd.build); offEl(dots[0]); });
+    sc.step(4800, function () { on(bars[1]); });
+    sc.step(5040, function () { dotSnap(dots[0], 860, 172); });
+    sc.step(5150, function () { dotGlide(dots[0], 896, 172, 300); });
+    sc.step(5480, function () { on(gate); offEl(dots[0]); });
+    lenses.forEach(function (lens, i) {
+      sc.step(5650 + i * 220, function () { act(lens); });
+    });
+    sc.step(6480, function () { dotSnap(dots[0], 1072, 172); });
+    sc.step(6590, function () { dotGlide(dots[0], 1100, 172, 300); });
+    sc.step(6920, function () { act(nd.fix); offEl(dots[0]); });
+    sc.step(7120, function () { dotSnap(dots[0], 1184, 172); });
+    sc.step(7230, function () { dotGlide(dots[0], 1204, 172, 300); });
+    sc.step(7560, function () { act(nd.ship); on(dias[2]); offEl(dots[0]); });
+  });
+
+  /* scene: kill and resume -- agents complete and journal their ticks, the
+     kill flashes at the ninth, the resume arrow draws into re-run */
+  makeScene("fig-kill", 10000, function (sc, root) {
+    var agents = $all(root, ".hk-agent");
+    var lines  = $all(root, ".hk-line");
+    var drops  = $all(root, ".hk-drop");
+    var xmark  = $one(root, "#hk-x");
+    var xtext  = $one(root, "#hk-xt");
+    var res    = $one(root, "#hk-res");
+    var resh   = $one(root, "#hk-resh");
+    var rerun  = $one(root, "#hk-rerun");
+    var cost   = $one(root, "#hk-cost");
+    sc.reset = function () {
+      agents.forEach(deact); deact(rerun);
+      lines.forEach(offEl); drops.forEach(offEl);
+      [xmark, xtext, res, resh, cost].forEach(offEl);
+    };
+    agents.forEach(function (agent, i) {
+      sc.step(300 + i * 420, function () { act(agent); });
+      sc.step(480 + i * 420, function () { on(lines[i]); on(drops[i]); });
+    });
+    sc.step(4300, function () { on(xmark); on(xtext); });
+    sc.step(5300, function () { on(res); });
+    sc.step(6400, function () { on(resh); act(rerun); });
+    sc.step(7100, function () { on(cost); });
+  });
+
+  /* visibility gating: run a scene only while >=35% visible and the tab shown */
+  if ("IntersectionObserver" in window && !red() && SCENES.length) {
+    var sceneIo = new IntersectionObserver(function (entries) {
+      if (red()) return;
+      entries.forEach(function (en) {
+        var sc = en.target.__scene;
+        if (!sc) return;
+        if (en.isIntersecting) {
+          if (!sc.active && !sc.done) {
+            sc.active = true;
+            sc.loops = 0;
+            sc.t0 = performance.now();
+            sc.idx = -1;
+            sc.root.classList.remove("anim-settled");
+            sc.root.classList.add("anim-live");
+            sc.reset();
+            wakeScenes();
+          }
+        } else {
+          sc.active = false;
+          /* offscreen: rest on the complete composed markup frame */
+          sc.root.classList.remove("anim-live");
+          $all(sc.root, ".anim-dot, .anim-slide").forEach(function (d) {
+            d.style.transition = "";
+            d.style.transform = "";
+          });
+        }
+      });
+    }, { threshold: 0.35 });
+    SCENES.forEach(function (sc) {
+      /* observe the un-clipped figure container: a wide svg is horizontally
+         clipped by .viz-scroll on narrow viewports and may never reach the
+         visibility threshold itself */
+      var box = (sc.root.closest && sc.root.closest(".viz")) || sc.root;
+      box.__scene = sc;
+      sceneIo.observe(box);
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        if (sceneRaf !== null) { cancelAnimationFrame(sceneRaf); sceneRaf = null; }
+      } else {
+        wakeScenes();
+      }
+    });
+  } else {
+    settleScenes();
+  }
+
   /* live reduced-motion toggle: compose the static state immediately */
   function applyRed() {
-    if (!red()) return;
-    revealEls.forEach(function (el) { el.classList.add("in"); });
+    if (red()) {
+      revealEls.forEach(function (el) { el.classList.add("in"); });
+      settleScenes();
+    } else {
+      /* motion allowed again: shed the settled state so scenes resume
+         cleanly when they re-enter the viewport */
+      SCENES.forEach(function (sc) { sc.root.classList.remove("anim-settled"); });
+    }
   }
   if (mmR.addEventListener) mmR.addEventListener("change", applyRed);
+  else if (mmR.addListener) mmR.addListener(applyRed);
 })();
 </script>
 
