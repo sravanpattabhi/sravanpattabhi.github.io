@@ -343,6 +343,24 @@
   }
   @keyframes blink { 50% { opacity: 0; } }
 
+  /* ============ What this demonstrates ============ */
+  .demo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .demo-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 24px 22px 26px;
+  }
+  .demo-tag {
+    font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--amber);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .demo-tag::before { content: "\25C6"; font-size: 8px; color: var(--amber-dim); }
+  .demo-item p { margin-top: 12px; color: var(--read); font-size: .94em; line-height: 1.6; }
+  .demo-item strong { color: var(--bone); font-weight: 600; }
+  @media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+
   /* ============ Reveal on scroll ============ */
   .reveal {
     opacity: 0; transform: translateY(26px);
@@ -376,7 +394,7 @@
     .cta { font-size: var(--fs-mono-2); padding: 14px 20px; letter-spacing: .06em; }
   }
   .back-link {
-    display: inline-block; margin-top: 36px;
+    display: inline-block; margin-top: 36px; margin-right: 26px;
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .12em;
     text-transform: uppercase; color: var(--muted);
     transition: color var(--d-hover) var(--ease-out);
@@ -437,6 +455,7 @@
         <span>Role<b>Design &amp; build: Sravan Pattabhi</b></span>
         <span>Status<b>Private repo &mdash; paper trading in progress</b></span>
         <span>Stack<b>Python &middot; uv &middot; custom engine</b></span>
+        <span>Demonstrates<b>Distributed systems &middot; AI engineering &middot; Full-stack</b></span>
       </div>
     </div>
   </section>
@@ -604,7 +623,9 @@
           that day&apos;s prices), evaluate the kill switch, queue new orders.
           Because the code path is shared, any divergence between a paper
           account and a backtest replay over the same days is a <em>data</em>
-          problem, not a code fork. The parity test &mdash;
+          problem, not a code fork &mdash; the same reproducible-from-the-log
+          bar I hold the event-streamed systems in my day job to. The parity
+          test &mdash;
           <code>test_paper_incremental_equals_continuous_replay</code> &mdash;
           is the most important test in the repo: it proves that daily
           incremental paper runs, including missed-day catch-up, produce
@@ -808,6 +829,10 @@
           layer shipped before any new feature did. Getting told your reports
           flatter you, by your own review process, and reordering everything
           in response: that&apos;s the system working on its own author.
+          It is also how everything I build gets reviewed: independent
+          adversarial lenses pushed through the real artifact, every finding
+          triaged &mdash; fixed or rejected with a written reason &mdash;
+          before anything ships.
         </p>
       </div>
 
@@ -893,7 +918,7 @@
   <span class="tm-muted">buy &amp; hold SPY</span>           17.1%      0.93    &minus;18.6%
   <span class="tm-muted">equal-weight universe</span>    15.4%      0.86    &minus;20.2%
 
-  <span class="tm-muted">alpha &minus;1.4%  &middot;  beta 0.36  &middot;  up-capture 31% / down-capture 44%</span>
+  <span class="tm-muted">alpha &minus;1.9%  &middot;  beta 0.36  &middot;  up-capture 31% / down-capture 44%</span>
 
   <span class="tm-verdict">VERDICT: strategy LAGS buy-and-hold SPY over this window.</span> <span class="tcaret"></span></pre>
         </div>
@@ -922,7 +947,10 @@
           signals against a real broker&apos;s paper engine in parallel, with
           the simulator as shadow reference &mdash; the divergence between
           them is exactly the fill-quality data the paper rung exists to
-          measure.
+          measure. A view-only web dashboard built over the same run
+          artifacts and journal puts the benchmark blocks, expectation
+          envelopes, and gate verdicts on one screen, so the paper account is
+          watched visually, not just through the CLI.
         </p>
         <p class="reveal">
           And no strategy has been promoted to real money. Not because the
@@ -941,7 +969,14 @@
           in&rdquo; and re-buys the next day, paying the round-trip cost
           again. That churn is the one structural cost I&apos;ve documented
           rather than hidden; entering only on a fresh cross (plus trailing
-          stops and shorting) removes it. The repo is private; this page is
+          stops and shorting) removes it. The ladder is also
+          <strong>ML-ready by construction</strong>: a learned model is just
+          another strategy emitting 0-or-1 exposure, and it gets no shortcuts
+          &mdash; the same walk-forward windows, the same one-shot holdout,
+          the same regime splits, the same gate. And the lab itself is built
+          the way everything I ship is built: directed agent pipelines under
+          an agent contract file in the repo, with the test suite deciding
+          what lands. The repo is private; this page is
           the tour.
         </p>
         <p class="reveal">
@@ -950,6 +985,43 @@
           don&apos;t want. Every claim on this page traces to a test, a
           report, or a critique in the repo. That&apos;s the job.
         </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 07 WHAT THIS DEMONSTRATES ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">07</span>
+        <span class="sec-num">07</span>
+        <span class="sec-label">What this demonstrates</span>
+      </div>
+      <h2 class="reveal">Three pillars, receipts attached</h2>
+      <div class="demo-grid">
+        <div class="demo-item reveal">
+          <span class="demo-tag">Distributed systems</span>
+          <p><strong>Replay determinism, proven</strong> &mdash; incremental
+          paper runs produce exactly the state of one continuous replay,
+          pinned by the parity test. It&apos;s the same event-sourcing
+          property that makes event-streamed systems debuggable &mdash; the
+          bar I hold the ones in my day job to.</p>
+        </div>
+        <div class="demo-item reveal">
+          <span class="demo-tag">AI engineering</span>
+          <p><strong>Five LLM-simulated trader personas, driven through the
+          real tool,</strong> filed the critique that inverted the roadmap.
+          The ML-ready harness &mdash; walk-forward windows, a one-shot
+          holdout, regime splits &mdash; is what any learned strategy must
+          climb, in a lab developed by directed agent pipelines.</p>
+        </div>
+        <div class="demo-item reveal">
+          <span class="demo-tag">Full-stack</span>
+          <p>A <strong>view-only web dashboard</strong> over the run
+          artifacts &mdash; benchmark blocks, expectation envelopes, and gate
+          verdicts on one screen &mdash; beside the CLI reporting
+          surface.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -968,9 +1040,10 @@
       </a>
       <br>
       <a class="back-link reveal" href="/">&larr; Back to the portfolio</a>
+      <a class="back-link reveal" href="cairn.html">Next case study: Cairn &rarr;</a>
       <footer>
         <span>&copy; 2026 Sravan Pattabhi</span>
-        <span>Case study &mdash; Trading Lab &mdash; hand-built, one HTML file</span>
+        <span>Case study &mdash; Trading Lab &mdash; one HTML file</span>
       </footer>
     </div>
   </section>

@@ -297,6 +297,24 @@
   .caret { fill: var(--amber); animation: blink 1.1s steps(2, start) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
+  /* ============ What this demonstrates ============ */
+  .demo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .demo-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 24px 22px 26px;
+  }
+  .demo-tag {
+    font-family: var(--mono); font-size: var(--fs-mono-1); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--amber);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .demo-tag::before { content: "\25C6"; font-size: 8px; color: var(--amber-dim); }
+  .demo-item p { margin-top: 12px; color: var(--read); font-size: .94em; line-height: 1.6; }
+  .demo-item strong { color: var(--bone); font-weight: 600; }
+  @media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+
   /* ============ Reveal on scroll ============ */
   .reveal {
     opacity: 0; transform: translateY(26px);
@@ -330,7 +348,7 @@
     .cta { font-size: var(--fs-mono-2); padding: 14px 20px; letter-spacing: .06em; }
   }
   .back-link {
-    display: inline-block; margin-top: 36px;
+    display: inline-block; margin-top: 36px; margin-right: 26px;
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .12em;
     text-transform: uppercase; color: var(--muted);
     transition: color var(--d-hover) var(--ease-out);
@@ -385,12 +403,14 @@
         them are full of AI slop. I built Cairn &mdash; a job-search engine
         whose core feature is that it <em>refuses to lie to you</em> &mdash;
         and then refactored it from a zero-test script into a dual-backend,
-        multi-tenant system without changing a single output byte.
+        multi-tenant system with the engine&apos;s JSON output pinned
+        byte-for-byte throughout.
       </p>
       <div class="hero-meta">
         <span>Role<b>Design &amp; build: Sravan Pattabhi</b></span>
         <span>Status<b>Private repo &mdash; in active development</b></span>
-        <span>Stack<b>Python &middot; Flask &middot; SQLite / Postgres</b></span>
+        <span>Stack<b>Python &middot; Flask &middot; SQLite / Postgres &middot; web UI</b></span>
+        <span>Demonstrates<b>Distributed systems &middot; AI engineering &middot; Full-stack</b></span>
       </div>
     </div>
   </section>
@@ -704,6 +724,11 @@
           The UI says so in as many words: the score is a profile-fit
           estimate, not a callback prediction. A deterministic rubric can be
           audited, versioned, and argued with. A vibe from a model can&apos;t.
+          That isn&apos;t a stance against models &mdash; building AI-agent
+          skills on MCP servers is my day job at Oracle, where they catch
+          reliability problems before customers hit them. The judgment is
+          about placement: an LLM belongs where language is the problem; a
+          score a user needs to argue with must be a rubric they can read.
           For a tool whose brand is trust, that tradeoff wasn&apos;t close
           &mdash; and the profile itself is data, a JSON document in a
           <code>profiles</code> row, so the rubric&apos;s inputs are per-user
@@ -899,6 +924,21 @@
           otherwise. CI runs the lot &mdash; lint, types, and all ~100 tests
           on Python 3.11 and 3.12, isolation gate on both backends.
         </p>
+        <p class="reveal">
+          The discipline has a second job: it&apos;s what lets me build Cairn
+          by <strong>directing a fleet of AI agents</strong> rather than
+          typing every line &mdash; an agent contract file in the repo sets
+          the rules, and every change faces adversarial review across
+          correctness, design, comprehension, and sensitivity lenses.
+        </p>
+        <p class="reveal">
+          The golden masters, the isolation gate, and CI are why that speed
+          is safe: an agent can propose any refactor it likes &mdash; the
+          gates decide what ships, and no agent can land a byte the suite
+          doesn&apos;t bless. This case study went through the same review,
+          with dozens of independent findings per round triaged &mdash;
+          fixed or rejected with a written reason &mdash; before publish.
+        </p>
       </div>
     </div>
   </section>
@@ -920,6 +960,8 @@
           <li>Scan any company with a public ATS board.</li>
           <li>Get explainably scored, deduped results with full
           provenance.</li>
+          <li>Work it all from a framework-free client that surfaces every
+          promise the engine makes.</li>
           <li>Track a funnel whose history is append-only.</li>
           <li>Draft outreach from templates no AI wrote.</li>
           <li>Keep a scheduled watchlist that reports failures instead of
@@ -951,22 +993,60 @@
     </div>
   </section>
 
+  <!-- ================= 09 WHAT THIS DEMONSTRATES ================= -->
+  <section class="cs">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="ghost" aria-hidden="true">09</span>
+        <span class="sec-num">09</span>
+        <span class="sec-label">What this demonstrates</span>
+      </div>
+      <h2 class="reveal">Three pillars, receipts attached</h2>
+      <div class="demo-grid">
+        <div class="demo-item reveal">
+          <span class="demo-tag">Distributed systems</span>
+          <p><strong>Six independent remote sources that fail
+          independently</strong> &mdash; partial failure handled fail-soft
+          with per-source health, idempotent rescans that never clobber user
+          state, and cross-tenant isolation as a permanent CI gate &mdash;
+          with a dual-backend store behind one seam.</p>
+        </div>
+        <div class="demo-item reveal">
+          <span class="demo-tag">AI engineering</span>
+          <p><strong>Knowing where an LLM belongs</strong> &mdash; a
+          deterministic, auditable rubric chosen deliberately by someone who
+          builds AI-agent skills on MCP servers for a living &mdash; and a
+          codebase developed by directed agent pipelines under golden-master
+          gates.</p>
+        </div>
+        <div class="demo-item reveal">
+          <span class="demo-tag">Full-stack</span>
+          <p>The <strong>Flask API and the framework-free client</strong>
+          that surfaces every promise the engine makes &mdash; health strings
+          always shown, provenance chips, the gaps list.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= CTA ================= -->
   <section class="cta-block">
     <div class="wrap">
       <h2 class="reveal">Want the <em>full walkthrough?</em></h2>
       <p class="cta-sub reveal">
-        The repo is private, but the ADRs, the golden-master suite, and the
-        isolation gate all make for a good screen-share.
+        The repo is private, but the ADRs, the golden-master suite, the
+        isolation gate, and the agent contract file all make for a good
+        screen-share.
       </p>
       <a class="cta reveal" href="mailto:sravan.pattabhi97@gmail.com">
         sravan.pattabhi97@gmail.com <span class="cta-arr" aria-hidden="true">&nearr;</span>
       </a>
       <br>
       <a class="back-link reveal" href="/">&larr; Back to the portfolio</a>
+      <a class="back-link reveal" href="trading-lab.html">Next case study: Trading Lab &rarr;</a>
       <footer>
         <span>&copy; 2026 Sravan Pattabhi</span>
-        <span>Case study &mdash; Cairn &mdash; hand-built, one HTML file</span>
+        <span>Case study &mdash; Cairn &mdash; one HTML file</span>
       </footer>
     </div>
   </section>

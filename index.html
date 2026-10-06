@@ -331,7 +331,11 @@
     color: var(--muted);
   }
   .about-copy strong { color: var(--bone); font-weight: 500; }
-  @media (max-width: 800px) { .about-grid { grid-template-columns: 1fr; gap: 20px; } }
+  .about-copy.c2 { grid-column: 2; }
+  @media (max-width: 800px) {
+    .about-grid { grid-template-columns: 1fr; gap: 20px; }
+    .about-copy.c2 { grid-column: auto; }
+  }
 
   /* ============ 00 System schematic (The Wire) ============ */
   .schematic {
@@ -836,11 +840,48 @@
       <p class="about-copy reveal d1">
         Full-stack means the whole thing: <strong>React fronts, Spring Boot
         and Node services, Kafka event streams, and the Kubernetes they run
-        on</strong> &mdash; across AWS, Azure, and OCI, leading the teams that
-        ship them. The AI half is production-grade too:
+        on</strong> &mdash; across AWS, Azure, and OCI, including leading a
+        team of 7 at Walmart. The AI half is production-grade too:
         <strong>agent skills on MCP servers that catch reliability problems
         before customers do.</strong>
       </p>
+      <p class="about-copy c2 reveal d2">
+        The way I ship: complex problems decomposed into <strong>phased
+        agent pipelines</strong> &mdash; parallel researchers, builders,
+        adversarial reviewers, fixers &mdash; with me as the integrator
+        making the judgment calls. This site and both case studies shipped
+        that way, with dozens of adversarial findings per round triaged
+        &mdash; fixed or rejected with a written reason &mdash; before
+        anything went live. The <strong>validation
+        discipline</strong> everywhere on this page &mdash; tests, golden
+        masters, executable gates &mdash; is exactly what makes that speed
+        trustworthy.
+      </p>
+    </div>
+    <div class="wrap">
+      <div class="proof-label reveal">The career, in numbers</div>
+      <div class="proof" id="proof">
+        <div class="stat">
+          <div class="stat-val"><span class="num" data-from="0" data-to="6" style="min-width:1.1ch">6</span><span class="suf">+</span></div>
+          <div class="stat-label">Yrs shipping to prod</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val"><span class="num" data-from="0" data-to="7" style="min-width:1.1ch">7</span></div>
+          <div class="stat-label">Engineers led</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">65<span class="suf">&rarr;</span><span class="num" data-from="65" data-to="85" style="min-width:2.2ch">85</span><span class="suf">%</span></div>
+          <div class="stat-label">Test coverage raised</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val"><span class="num" data-from="0" data-to="3" style="min-width:1.1ch">3</span></div>
+          <div class="stat-label">Clouds &mdash; AWS Azure OCI</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val"><span class="num" data-from="0" data-to="3" style="min-width:1.1ch">3</span></div>
+          <div class="stat-label">Fortune-1 &amp; healthcare systems shipped</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -901,30 +942,6 @@
         <button class="wchip" data-node="health"><span class="n">W</span>Source health</button>
       </div>
       <p class="wire-caption" id="wcap" aria-live="off">A failing source becomes a health entry, never a crashed scan.</p>
-
-      <div class="proof-label reveal">The career behind it</div>
-      <div class="proof" id="proof">
-        <div class="stat">
-          <div class="stat-val"><span class="num" data-from="0" data-to="6" style="min-width:1.1ch">6</span><span class="suf">+</span></div>
-          <div class="stat-label">Yrs shipping to prod</div>
-        </div>
-        <div class="stat">
-          <div class="stat-val"><span class="num" data-from="0" data-to="7" style="min-width:1.1ch">7</span></div>
-          <div class="stat-label">Engineers led</div>
-        </div>
-        <div class="stat">
-          <div class="stat-val">65<span class="suf">&rarr;</span><span class="num" data-from="65" data-to="85" style="min-width:2.2ch">85</span><span class="suf">%</span></div>
-          <div class="stat-label">Test coverage raised</div>
-        </div>
-        <div class="stat">
-          <div class="stat-val"><span class="num" data-from="0" data-to="3" style="min-width:1.1ch">3</span></div>
-          <div class="stat-label">Clouds &mdash; AWS Azure OCI</div>
-        </div>
-        <div class="stat">
-          <div class="stat-val"><span class="num" data-from="0" data-to="5" style="min-width:1.1ch">5</span></div>
-          <div class="stat-label">Certifications held</div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -948,10 +965,11 @@
             <div class="xp-role">Senior SDE &mdash; Health &amp; AI Applications</div>
             <p>
               Built the platform that automates how engineering issues get created,
-              routed, and resolved across Jira and Slack &mdash; including the routing
-              engine that weighs severity, workload, ownership, and timezones, and
-              AI-agent skills on MCP servers that flag reliability problems before
-              they reach customers.
+              routed, and resolved across Jira and Slack &mdash; a routing engine
+              that weighs severity, workload, ownership, and timezones and ended
+              hand-assignment of engineering work, plus AI-agent skills on MCP
+              servers that catch CPU spikes, server errors, and auth failures
+              before customers experience them.
             </p>
             <div class="xp-tags">React/TS &middot; Oracle APEX &middot; PL/SQL &middot; OIC &middot; MCP</div>
           </div>
@@ -1040,9 +1058,9 @@
             The system running in 00 above &mdash; a job-search command center.
             Real openings pulled from employers&apos; own ATS boards, scored
             against your profile with the reasons shown, and every status
-            change kept as an append-only history. No scraping, no AI
-            ghost-writing, no auto-apply &mdash; statuses move only when you
-            move them.
+            change kept as an append-only history. No scraping, no auto-apply
+            &mdash; statuses move only when you move them. Refactored
+            behind byte-for-byte golden masters, API to client.
           </p>
           <a class="card-link" href="cairn.html">Read the case study <span class="arr">&rarr;</span></a>
         </article>
@@ -1050,14 +1068,14 @@
         <article class="card reveal d1" data-tilt>
           <div class="card-top">
             <span class="chip live">Active</span>
-            <span class="card-tags">Python &middot; Risk</span>
+            <span class="card-tags">Python &middot; Risk &middot; Dashboard</span>
           </div>
           <div class="card-viz"><canvas data-viz="spark" aria-hidden="true"></canvas></div>
           <h3>Trading Lab</h3>
           <p>
             A paper-trading-first algorithmic trading system. Every strategy must
             survive backtests and forward validation before promotion &mdash; live
-            capital is a privilege, never a default.
+            trading is a privilege the gate command grants, and it still says FAIL.
           </p>
           <a class="card-link" href="trading-lab.html">Read the case study <span class="arr">&rarr;</span></a>
         </article>
@@ -1125,7 +1143,7 @@
           <span class="now-when">Now</span>
           <span class="now-what">
             Trading Lab &mdash; validation phase
-            <small>Walk-forward testing and honest benchmarks before any strategy earns promotion.</small>
+            <small>Walk-forward testing and honest benchmarks before any strategy &mdash; hand-written or learned &mdash; earns promotion.</small>
           </span>
           <span class="now-tag">Personal</span>
         </div>
@@ -1141,17 +1159,9 @@
           <span class="now-when">Now</span>
           <span class="now-what">
             This portfolio
-            <small>A hand-built motion system in a single HTML file &mdash; no frameworks, every animation written from scratch.</small>
+            <small>One HTML file, no frameworks &mdash; designed and directed end to end: a multi-agent build where every adversarial review finding was triaged &mdash; fixed or rejected with a written reason &mdash; before ship.</small>
           </span>
           <span class="now-tag">Web</span>
-        </div>
-        <div class="now-row reveal d3">
-          <span class="now-when">Learning</span>
-          <span class="now-what">
-            Agentic AI, in depth
-            <small>MCP server patterns, multi-agent orchestration, and what it takes to trust agents in production.</small>
-          </span>
-          <span class="now-tag">Skills</span>
         </div>
       </div>
     </div>
@@ -1279,6 +1289,7 @@
   <div class="kinetic" aria-hidden="true">
     <div class="kinetic-line" data-base="40" data-dir="-1">SYSTEMS&nbsp;THAT&nbsp;RUN&nbsp;THEMSELVES&nbsp;&mdash;&nbsp;SYSTEMS&nbsp;THAT&nbsp;RUN&nbsp;THEMSELVES&nbsp;&mdash;&nbsp;</div>
     <div class="kinetic-line solid" data-base="30" data-dir="1">CAUGHT&nbsp;BEFORE&nbsp;CUSTOMERS&nbsp;NOTICE&nbsp;&mdash;&nbsp;CAUGHT&nbsp;BEFORE&nbsp;CUSTOMERS&nbsp;NOTICE&nbsp;&mdash;&nbsp;</div>
+    <div class="kinetic-line" data-base="34" data-dir="-1">NOTHING&nbsp;SHIPS&nbsp;UNGATED&nbsp;&mdash;&nbsp;NOTHING&nbsp;SHIPS&nbsp;UNGATED&nbsp;&mdash;&nbsp;</div>
   </div>
 
   <!-- ================= CONTACT ================= -->
@@ -1295,7 +1306,7 @@
       </ul>
       <footer>
         <span>&copy; 2026 Sravan Pattabhi</span>
-        <span>Hand-built &mdash; one HTML file, no frameworks &mdash; draft 05</span>
+        <span>Shipped &mdash; one HTML file, no frameworks &mdash; draft 05</span>
       </footer>
     </div>
   </section>
