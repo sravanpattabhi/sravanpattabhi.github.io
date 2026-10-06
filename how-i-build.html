@@ -26,7 +26,6 @@
   :root {
     --ink:      #0C0E13;
     --surface:  #151823;
-    --raised:   #1B1F2E;
     --bone:     #EAE5D9;
     --read:     #AEB4C6;
     --muted:    #8A90A5;
@@ -43,7 +42,7 @@
 
     --ease-out:   cubic-bezier(.19, 1, .22, 1);
     --ease-inout: cubic-bezier(.65, 0, .35, 1);
-    --d-micro: .18s; --d-hover: .42s; --d-reveal: .8s;
+    --d-micro: .18s; --d-hover: .26s; --d-reveal: .5s;
 
     --fs-mono-1: 11px; --fs-mono-2: 12px; --fs-mono-3: 13px;
 
@@ -52,7 +51,7 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
 
   body {
     background: var(--ink);
@@ -62,13 +61,6 @@
     line-height: 1.68;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
-  }
-
-  /* film grain -- carried over from the main site */
-  body::after {
-    content: ""; position: fixed; inset: 0; z-index: 80;
-    pointer-events: none; opacity: .05;
-    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="140" height="140"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="140" height="140" filter="url(%23n)"/%3E%3C/svg%3E');
   }
 
   ::selection { background: var(--amber); color: var(--ink); }
@@ -104,25 +96,31 @@
   .nav-links a {
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .1em;
     text-transform: uppercase; color: var(--muted);
-    position: relative; padding: 4px 0;
+    position: relative; padding: 20px 0;
     transition: color var(--d-hover) var(--ease-out);
   }
   .nav-links a::after {
-    content: ""; position: absolute; left: 0; bottom: 0;
+    content: ""; position: absolute; left: 0; bottom: 14px;
     width: 100%; height: 1px; background: var(--amber);
     transform: scaleX(0); transform-origin: right;
     transition: transform var(--d-hover) var(--ease-out);
   }
   .nav-links a:hover { color: var(--bone); }
   .nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+  .nav-links a.cur { color: var(--bone); }
+  .nav-links a.cur::after { transform: scaleX(1); transform-origin: left; }
+  @media (max-width: 700px) {
+    .nav-links { gap: 14px; }
+    .nav-links a { font-size: var(--fs-mono-1); letter-spacing: .05em; }
+  }
 
   /* ============ Hero ============ */
-  .cs-hero { padding: 170px 0 72px; }
+  .cs-hero { padding: clamp(110px, 18vw, 170px) 0 72px; }
   .eyebrow {
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
     text-transform: uppercase; color: var(--amber);
     display: inline-flex; align-items: center; gap: 10px;
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .1s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .05s forwards;
   }
   .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--amber); }
 
@@ -135,7 +133,7 @@
     margin-top: 22px;
     max-width: 14ch;
     text-wrap: balance;
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .22s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .12s forwards;
   }
 
   .standfirst {
@@ -144,7 +142,7 @@
     font-size: clamp(18px, 2.2vw, 22px);
     line-height: 1.55;
     color: var(--muted);
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .36s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .2s forwards;
   }
   .standfirst em { color: var(--bone); font-style: normal; }
 
@@ -154,7 +152,7 @@
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
     text-transform: uppercase;
     color: var(--faint);
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .5s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .28s forwards;
   }
   .hero-meta span b { color: var(--muted); font-weight: 400; display: block; margin-top: 4px; text-transform: none; }
 
@@ -186,7 +184,7 @@
   @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
 
   /* ============ Sections ============ */
-  section.cs { padding: clamp(80px, 10vw, 140px) 0 0; }
+  section.cs { padding: clamp(64px, 8vw, 110px) 0 0; }
 
   .sec-head {
     position: relative;
@@ -262,7 +260,7 @@
   .viz-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px; }
   .viz-scroll:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
   .viz svg { display: block; }
-  @media (max-width: 700px) {
+  @media (max-width: 1024px) {
     .viz { position: relative; }
     .viz-scroll::after {
       content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 36px;
@@ -286,12 +284,10 @@
   .t-muted { fill: var(--muted); }
   .t-faint { fill: var(--faint); }
   .t-amber { fill: var(--amber); }
-  .t-dim   { fill: var(--amber-dim); }
   .t-red   { fill: var(--red); }
   .bx      { fill: var(--ink); stroke: var(--line); }
   .bx-hot  { fill: var(--ink); stroke: var(--amber-dim); }
   .bx-off  { fill: var(--ink); stroke: var(--faint); stroke-dasharray: 4 4; }
-  .ln      { stroke: var(--line); fill: none; }
   .ln-dim  { stroke: var(--faint); fill: none; }
   .ln-amb  { stroke: var(--amber-dim); fill: none; }
   .ln-red  { stroke: var(--red); fill: none; }
@@ -347,7 +343,7 @@
   .reveal.in { opacity: 1; transform: none; }
 
   /* ============ CTA + footer ============ */
-  .cta-block { padding: clamp(100px, 13vw, 180px) 0 40px; }
+  .cta-block { padding: clamp(80px, 10vw, 140px) 0 40px; }
   .cta-block h2 {
     font-family: var(--display); font-weight: 700;
     font-size: clamp(36px, 6.4vw, 76px);
@@ -372,7 +368,8 @@
     .cta { font-size: var(--fs-mono-2); padding: 14px 20px; letter-spacing: .06em; }
   }
   .back-link {
-    display: inline-block; margin-top: 36px; margin-right: 26px;
+    display: inline-block; margin-top: 24px; margin-right: 26px;
+    padding: 12px 0;
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .12em;
     text-transform: uppercase; color: var(--muted);
     transition: color var(--d-hover) var(--ease-out);
@@ -408,10 +405,12 @@
 
 <header>
   <div class="wrap nav">
-    <a class="mark" href="/">SP<b>&mdash;</b>2026</a>
+    <a class="mark" href="index.html">SP<b>&mdash;</b>2026</a>
     <ul class="nav-links">
-      <li><a href="/">&larr; Back</a></li>
-      <li><a href="/#contact">Contact</a></li>
+      <li><a href="cairn.html">Cairn</a></li>
+      <li><a href="trading-lab.html">Trading Lab</a></li>
+      <li><a class="cur" aria-current="true" href="how-i-build.html">Method</a></li>
+      <li><a href="#contact">Contact</a></li>
     </ul>
   </div>
 </header>
@@ -488,14 +487,10 @@
           in most portfolios, a warning label.
         </p>
         <p class="reveal">
-          The leverage is real. A scripted run can read two private repos,
-          draft copy from what it found, build a page, and review it from
-          four directions in the time it takes a human to write an outline.
-          The drift is just as real: agents fabricate numbers that sound
+          The drift is specific: agents fabricate numbers that sound
           plausible, soften sharp claims into mush, praise their own output,
-          and wander off-brief the moment a task runs long. Most AI-assisted
-          work ships both halves &mdash; the speed and the drift &mdash; and
-          a careful reader can smell it in a paragraph.
+          and wander off-brief the moment a task runs long. A careful reader
+          can smell it in a paragraph.
         </p>
         <p class="reveal">
           So the engineering problem was never &quot;use agents.&quot; It is
@@ -569,7 +564,7 @@
 
       <figure class="viz reveal">
         <div class="viz-scroll" tabindex="0" role="group" aria-label="Run-shape diagram, scrolls horizontally on narrow screens">
-          <svg viewBox="0 0 1280 440" width="1280" height="440" style="min-width:1000px;width:100%;height:auto" role="img" aria-label="Run-shape diagram, left to right. A brief fans out to two parallel scout boxes, analyst repo A and analyst repo B. A dashed barrier line follows, then a fan-out to three writer boxes with assigned angles: minimalist, vivid imagery, recruiter-opt. A judge box notes all options in, kills cliches, duplicates, fabrication-adjacent. Then a builder, then a second barrier, then a full-height amber review gate band holding four stacked lens boxes: correctness, design, first-glance, sensitivity. Then a fixer, then ship. A bracket beneath the full pipeline through ship is labeled scripted: phases, fan-out, barriers. Amber diamonds at the brief, at the judge's criteria, and after the gate are jointly labeled human: brief, criteria, triage.">
+          <svg viewBox="0 0 1280 440" width="1280" height="440" style="min-width:920px;width:100%;height:auto" role="img" aria-label="Run-shape diagram, left to right. A brief fans out to two parallel scout boxes, analyst repo A and analyst repo B. A dashed barrier line follows, then a fan-out to three writer boxes with assigned angles: minimalist, vivid imagery, recruiter-opt. A judge box notes all options in, kills cliches, duplicates, fabrication-adjacent. Then a builder, then a second barrier, then a full-height amber review gate band holding four stacked lens boxes: correctness, design, first-glance, sensitivity. Then a fixer, then ship. A bracket beneath the full pipeline through ship is labeled scripted: phases, fan-out, barriers. Amber diamonds at the brief, at the judge's criteria, and after the gate are jointly labeled human: brief, criteria, triage.">
             <!-- BRIEF -->
             <rect class="bx-hot" x="16" y="150" width="86" height="46" rx="3"></rect>
             <text class="t-bone" x="59" y="177" font-size="11" text-anchor="middle" letter-spacing="1">BRIEF</text>
@@ -783,7 +778,6 @@
           trades: append-only records written at the time, never
           reconstructed from memory afterward. Eight of nine results came
           straight back out of the journal, and only the final stage re-ran.
-          Total cost of the kill: minutes.
         </p>
         <p class="reveal">
           That property is designed, not lucky. Checkpointed orchestration
@@ -885,14 +879,12 @@
         <p class="reveal">
           Numbers over adjectives. Across all six runs that built this site
           and its case studies, the adversarial panels returned 164 findings
-          &mdash; the per-run counts are in the ledger below &mdash; every
-          one triaged, fixed or rejected with a written reason, before
-          anything went live. Runs are five to nine agents and burn hundreds
-          of thousands to roughly a million tokens of agent work each. A
-          full case-study pipeline &mdash; repo mining to draft to build to
-          four-lens review to fix &mdash; completes in roughly 20 to 30
-          minutes of wall clock. The homepage redesign, the largest run, took
-          about two hours.
+          &mdash; per-run counts in the ledger below &mdash; every one
+          triaged before anything went live. Runs burn hundreds of thousands
+          to roughly a million tokens of agent work each. A full case-study
+          pipeline &mdash; repo mining to draft to build to four-lens review
+          to fix &mdash; completes in roughly 20 to 30 minutes of wall clock.
+          The homepage redesign, the largest run, took about two hours.
         </p>
         <p class="reveal">
           Honest accounting cuts both ways: those minutes buy drafts and
@@ -985,8 +977,8 @@
         <p class="reveal">
           A page produced by the pipeline can&apos;t certify the pipeline
           &mdash; that&apos;s the same conflict of interest the gates exist
-          to catch. So don&apos;t take this page&apos;s word for it. A run is
-          twenty to thirty minutes; I&apos;ll do one in front of you.
+          to catch. So don&apos;t take this page&apos;s word for it &mdash;
+          I&apos;ll do one in front of you.
         </p>
       </div>
     </div>
@@ -1021,8 +1013,7 @@
         </div>
         <div class="demo-item reveal">
           <span class="demo-tag">Judgment</span>
-          <p><strong>Every verdict on the record</strong> &mdash; each
-          finding fixed or rejected with a written reason, including
+          <p><strong>Every verdict on the record</strong> &mdash; including
           overruling a technically-correct sensitivity flag and shipping the
           fix that killed a flattering line.</p>
         </div>
@@ -1031,21 +1022,21 @@
   </section>
 
   <!-- ================= CTA ================= -->
-  <section class="cta-block">
+  <section class="cta-block" id="contact">
     <div class="wrap">
       <h2 class="reveal">Want to see a <em>run live?</em></h2>
       <p class="cta-sub reveal">
         A full case-study pipeline completes in 20 to 30 minutes &mdash;
-        short enough to watch end to end on a screen-share, review panel and
-        triage included.
+        review panel and triage included.
       </p>
       <a class="cta reveal" href="mailto:sravan.pattabhi97@gmail.com">
         sravan.pattabhi97@gmail.com <span class="cta-arr" aria-hidden="true">&nearr;</span>
       </a>
-      <br>
-      <a class="back-link reveal" href="/">&larr; Back to the portfolio</a>
-      <a class="back-link reveal" href="cairn.html">Built this way: Cairn &rarr;</a>
-      <a class="back-link reveal" href="trading-lab.html">Built this way: Trading Lab &rarr;</a>
+      <nav aria-label="Keep reading">
+        <a class="back-link reveal" href="cairn.html">Next: Cairn &rarr;</a>
+        <a class="back-link reveal" href="trading-lab.html">Trading Lab &rarr;</a>
+        <a class="back-link reveal" href="index.html">Portfolio &rarr;</a>
+      </nav>
       <footer>
         <span>&copy; 2026 Sravan Pattabhi</span>
         <span>Case study &mdash; Method &mdash; one HTML file</span>
@@ -1088,8 +1079,16 @@
         en.target.classList.add("in");
         io.unobserve(en.target);
       });
-    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
-    revealEls.forEach(function (el) { io.observe(el); });
+    }, { threshold: 0.05, rootMargin: "0px 0px 12% 0px" });
+    revealEls.forEach(function (el) {
+      /* anything already above the viewport bottom composes immediately --
+         deep-anchor arrivals never land on blank blocks */
+      if (el.getBoundingClientRect().top < window.innerHeight) {
+        el.classList.add("in");
+      } else {
+        io.observe(el);
+      }
+    });
   } else {
     revealEls.forEach(function (el) { el.classList.add("in"); });
   }

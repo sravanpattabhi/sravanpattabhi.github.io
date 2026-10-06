@@ -21,14 +21,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
-</head>
-<body>
 <style>
   /* ============ Tokens -- same committed dark world as the main site ============ */
   :root {
     --ink:      #0C0E13;
     --surface:  #151823;
-    --raised:   #1B1F2E;
     --bone:     #EAE5D9;
     --read:     #AEB4C6;
     --muted:    #8A90A5;
@@ -43,7 +40,7 @@
 
     --ease-out:   cubic-bezier(.19, 1, .22, 1);
     --ease-inout: cubic-bezier(.65, 0, .35, 1);
-    --d-micro: .18s; --d-hover: .42s; --d-reveal: .8s;
+    --d-micro: .18s; --d-hover: .26s; --d-reveal: .5s;
 
     --fs-mono-1: 11px; --fs-mono-2: 12px; --fs-mono-3: 13px;
 
@@ -52,7 +49,7 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
 
   body {
     background: var(--ink);
@@ -62,13 +59,6 @@
     line-height: 1.68;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
-  }
-
-  /* film grain -- carried over from the main site */
-  body::after {
-    content: ""; position: fixed; inset: 0; z-index: 80;
-    pointer-events: none; opacity: .05;
-    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="140" height="140"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="140" height="140" filter="url(%23n)"/%3E%3C/svg%3E');
   }
 
   ::selection { background: var(--amber); color: var(--ink); }
@@ -104,25 +94,31 @@
   .nav-links a {
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .1em;
     text-transform: uppercase; color: var(--muted);
-    position: relative; padding: 4px 0;
+    position: relative; padding: 20px 0;
     transition: color var(--d-hover) var(--ease-out);
   }
   .nav-links a::after {
-    content: ""; position: absolute; left: 0; bottom: 0;
+    content: ""; position: absolute; left: 0; bottom: 14px;
     width: 100%; height: 1px; background: var(--amber);
     transform: scaleX(0); transform-origin: right;
     transition: transform var(--d-hover) var(--ease-out);
   }
   .nav-links a:hover { color: var(--bone); }
   .nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+  .nav-links a.cur { color: var(--bone); }
+  .nav-links a.cur::after { transform: scaleX(1); transform-origin: left; }
+  @media (max-width: 700px) {
+    .nav-links { gap: 14px; }
+    .nav-links a { font-size: var(--fs-mono-1); letter-spacing: .05em; }
+  }
 
   /* ============ Hero ============ */
-  .cs-hero { padding: 170px 0 72px; }
+  .cs-hero { padding: clamp(110px, 18vw, 170px) 0 72px; }
   .eyebrow {
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
     text-transform: uppercase; color: var(--amber);
     display: inline-flex; align-items: center; gap: 10px;
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .1s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .05s forwards;
   }
   .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--amber); }
 
@@ -135,7 +131,7 @@
     margin-top: 22px;
     max-width: 14ch;
     text-wrap: balance;
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .22s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .12s forwards;
   }
 
   .standfirst {
@@ -144,7 +140,7 @@
     font-size: clamp(18px, 2.2vw, 22px);
     line-height: 1.55;
     color: var(--muted);
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .36s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .2s forwards;
   }
   .standfirst em { color: var(--bone); font-style: normal; }
 
@@ -154,7 +150,7 @@
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
     text-transform: uppercase;
     color: var(--faint);
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .5s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .28s forwards;
   }
   .hero-meta span b { color: var(--muted); font-weight: 400; display: block; margin-top: 4px; text-transform: none; }
 
@@ -186,7 +182,7 @@
   @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
 
   /* ============ Sections ============ */
-  section.cs { padding: clamp(80px, 10vw, 140px) 0 0; }
+  section.cs { padding: clamp(64px, 8vw, 110px) 0 0; }
 
   .sec-head {
     position: relative;
@@ -262,13 +258,14 @@
   .viz-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px; }
   .viz-scroll:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
   .viz svg { display: block; }
-  @media (max-width: 700px) {
+  @media (max-width: 1024px) {
     .viz { position: relative; }
     .viz-scroll::after {
       content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 36px;
       pointer-events: none;
       background: linear-gradient(to right, transparent, var(--surface));
     }
+    .viz figcaption { position: relative; background: var(--surface); }
     .viz figcaption::after { content: " \00B7 drag \2192"; color: var(--faint); }
   }
   .viz figcaption {
@@ -285,10 +282,8 @@
   .t-muted { fill: var(--muted); }
   .t-faint { fill: var(--faint); }
   .t-amber { fill: var(--amber); }
-  .t-dim   { fill: var(--amber-dim); }
   .bx      { fill: var(--ink); stroke: var(--line); }
   .bx-hot  { fill: var(--ink); stroke: var(--amber-dim); }
-  .ln      { stroke: var(--line); fill: none; }
   .ln-dim  { stroke: var(--faint); fill: none; }
   .ln-amb  { stroke: var(--amber-dim); fill: none; }
   .band    { fill: rgba(232,163,61,.07); stroke: var(--amber-dim); }
@@ -323,7 +318,7 @@
   .reveal.in { opacity: 1; transform: none; }
 
   /* ============ CTA + footer ============ */
-  .cta-block { padding: clamp(100px, 13vw, 180px) 0 40px; }
+  .cta-block { padding: clamp(80px, 10vw, 140px) 0 40px; }
   .cta-block h2 {
     font-family: var(--display); font-weight: 700;
     font-size: clamp(36px, 6.4vw, 76px);
@@ -348,7 +343,8 @@
     .cta { font-size: var(--fs-mono-2); padding: 14px 20px; letter-spacing: .06em; }
   }
   .back-link {
-    display: inline-block; margin-top: 36px; margin-right: 26px;
+    display: inline-block; margin-top: 24px; margin-right: 26px;
+    padding: 12px 0;
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .12em;
     text-transform: uppercase; color: var(--muted);
     transition: color var(--d-hover) var(--ease-out);
@@ -378,15 +374,19 @@
   .reveal { opacity: 1; transform: none; }
   .sec-head::after { transform: scaleX(1); }
 </style></noscript>
+</head>
+<body>
 
 <div id="progress" aria-hidden="true"></div>
 
 <header>
   <div class="wrap nav">
-    <a class="mark" href="/">SP<b>&mdash;</b>2026</a>
+    <a class="mark" href="index.html">SP<b>&mdash;</b>2026</a>
     <ul class="nav-links">
-      <li><a href="/">&larr; Back</a></li>
-      <li><a href="/#contact">Contact</a></li>
+      <li><a class="cur" aria-current="true" href="cairn.html">Cairn</a></li>
+      <li><a href="trading-lab.html">Trading Lab</a></li>
+      <li><a href="how-i-build.html">Method</a></li>
+      <li><a href="#contact">Contact</a></li>
     </ul>
   </div>
 </header>
@@ -479,12 +479,10 @@
           <code>interested</code> to <code>applied</code>.</li>
         </ul>
         <p class="reveal">
-          These read like product copy, but each one is an engineering
-          constraint with teeth, and most of them ended up enforced in code or
-          schema rather than in a style guide. That enforcement is what the
-          rest of this page is about. The codebase is a private repo &mdash;
-          what follows is the architecture, honestly told, including the parts
-          that aren&apos;t finished.
+          Each one is an engineering constraint with teeth &mdash; most
+          enforced in code or schema rather than in a style guide. That
+          enforcement is what the rest of this page is about, including the
+          parts that aren&apos;t finished.
         </p>
       </div>
     </div>
@@ -724,15 +722,10 @@
           The UI says so in as many words: the score is a profile-fit
           estimate, not a callback prediction. A deterministic rubric can be
           audited, versioned, and argued with. A vibe from a model can&apos;t.
-          That isn&apos;t a stance against models &mdash; building AI-agent
-          skills on MCP servers is my day job at Oracle, where they catch
-          reliability problems before customers hit them. The judgment is
-          about placement: an LLM belongs where language is the problem; a
-          score a user needs to argue with must be a rubric they can read.
-          For a tool whose brand is trust, that tradeoff wasn&apos;t close
-          &mdash; and the profile itself is data, a JSON document in a
-          <code>profiles</code> row, so the rubric&apos;s inputs are per-user
-          without the engine changing shape.
+          The judgment is about placement: an LLM belongs where language is
+          the problem; a score a user needs to argue with must be a rubric
+          they can read. For a tool whose brand is trust, that tradeoff
+          wasn&apos;t close.
         </p>
       </div>
     </div>
@@ -788,7 +781,7 @@
           &mdash; same codebase, selected by <code>DATABASE_URL</code>. The
           port is deliberately small: nothing outside a single store module
           knows which backend is running. Instead of SQLAlchemy (rejected in
-          writing &mdash; see the ADR rejection table below), the adapter is
+          writing &mdash; section 07 has the story), the adapter is
           about forty lines of psycopg glue: <code>?</code> placeholders
           rewritten to <code>%s</code>, dict-style rows,
           commit-on-clean-exit. Each backend keeps its own migration history
@@ -927,17 +920,10 @@
         <p class="reveal">
           The discipline has a second job: it&apos;s what lets me build Cairn
           by <strong>directing a fleet of AI agents</strong> rather than
-          typing every line &mdash; an agent contract file in the repo sets
-          the rules, and every change faces adversarial review across
-          correctness, design, comprehension, and sensitivity lenses.
-        </p>
-        <p class="reveal">
-          The golden masters, the isolation gate, and CI are why that speed
-          is safe: an agent can propose any refactor it likes &mdash; the
-          gates decide what ships, and no agent can land a byte the suite
-          doesn&apos;t bless. This case study went through the same review,
-          with dozens of independent findings per round triaged &mdash;
-          fixed or rejected with a written reason &mdash; before publish.
+          typing every line. The golden masters, the isolation gate, and CI
+          are why that speed is safe &mdash; an agent can propose any
+          refactor it likes; the gates decide what ships, and no agent can
+          land a byte the suite doesn&apos;t bless.
         </p>
       </div>
     </div>
@@ -960,8 +946,7 @@
           <li>Scan any company with a public ATS board.</li>
           <li>Get explainably scored, deduped results with full
           provenance.</li>
-          <li>Work it all from a framework-free client that surfaces every
-          promise the engine makes.</li>
+          <li>Work it all from a framework-free web client.</li>
           <li>Track a funnel whose history is append-only.</li>
           <li>Draft outreach from templates no AI wrote.</li>
           <li>Keep a scheduled watchlist that reports failures instead of
@@ -1030,21 +1015,21 @@
   </section>
 
   <!-- ================= CTA ================= -->
-  <section class="cta-block">
+  <section class="cta-block" id="contact">
     <div class="wrap">
-      <h2 class="reveal">Want the <em>full walkthrough?</em></h2>
+      <h2 class="reveal">Want to watch a refactor that <em>can&apos;t change a byte?</em></h2>
       <p class="cta-sub reveal">
-        The repo is private, but the ADRs, the golden-master suite, the
-        isolation gate, and the agent contract file all make for a good
-        screen-share.
+        The repo is private; the ADRs, the golden-master suite, the isolation
+        gate, and the agent contract are a screen-share away.
       </p>
       <a class="cta reveal" href="mailto:sravan.pattabhi97@gmail.com">
         sravan.pattabhi97@gmail.com <span class="cta-arr" aria-hidden="true">&nearr;</span>
       </a>
-      <br>
-      <a class="back-link reveal" href="/">&larr; Back to the portfolio</a>
-      <a class="back-link reveal" href="how-i-build.html">The method behind this page &rarr;</a>
-      <a class="back-link reveal" href="trading-lab.html">Next case study: Trading Lab &rarr;</a>
+      <nav aria-label="Keep reading">
+        <a class="back-link reveal" href="trading-lab.html">Next: Trading Lab &rarr;</a>
+        <a class="back-link reveal" href="how-i-build.html">Method &rarr;</a>
+        <a class="back-link reveal" href="index.html">Portfolio &rarr;</a>
+      </nav>
       <footer>
         <span>&copy; 2026 Sravan Pattabhi</span>
         <span>Case study &mdash; Cairn &mdash; one HTML file</span>
@@ -1087,8 +1072,16 @@
         en.target.classList.add("in");
         io.unobserve(en.target);
       });
-    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
-    revealEls.forEach(function (el) { io.observe(el); });
+    }, { threshold: 0.05, rootMargin: "0px 0px 12% 0px" });
+    revealEls.forEach(function (el) {
+      /* anything already above the viewport bottom composes immediately --
+         deep-anchor arrivals never land on blank blocks */
+      if (el.getBoundingClientRect().top < window.innerHeight) {
+        el.classList.add("in");
+      } else {
+        io.observe(el);
+      }
+    });
   } else {
     revealEls.forEach(function (el) { el.classList.add("in"); });
   }

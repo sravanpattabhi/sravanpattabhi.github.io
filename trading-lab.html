@@ -26,7 +26,6 @@
   :root {
     --ink:      #0C0E13;
     --surface:  #151823;
-    --raised:   #1B1F2E;
     --bone:     #EAE5D9;
     --read:     #AEB4C6;
     --muted:    #8A90A5;
@@ -43,7 +42,7 @@
 
     --ease-out:   cubic-bezier(.19, 1, .22, 1);
     --ease-inout: cubic-bezier(.65, 0, .35, 1);
-    --d-micro: .18s; --d-hover: .42s; --d-reveal: .8s;
+    --d-micro: .18s; --d-hover: .26s; --d-reveal: .5s;
 
     --fs-mono-1: 11px; --fs-mono-2: 12px; --fs-mono-3: 13px;
 
@@ -52,7 +51,7 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
 
   body {
     background: var(--ink);
@@ -62,13 +61,6 @@
     line-height: 1.68;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
-  }
-
-  /* film grain -- carried over from the main site */
-  body::after {
-    content: ""; position: fixed; inset: 0; z-index: 80;
-    pointer-events: none; opacity: .05;
-    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="140" height="140"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="140" height="140" filter="url(%23n)"/%3E%3C/svg%3E');
   }
 
   ::selection { background: var(--amber); color: var(--ink); }
@@ -104,25 +96,31 @@
   .nav-links a {
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .1em;
     text-transform: uppercase; color: var(--muted);
-    position: relative; padding: 4px 0;
+    position: relative; padding: 20px 0;
     transition: color var(--d-hover) var(--ease-out);
   }
   .nav-links a::after {
-    content: ""; position: absolute; left: 0; bottom: 0;
+    content: ""; position: absolute; left: 0; bottom: 14px;
     width: 100%; height: 1px; background: var(--amber);
     transform: scaleX(0); transform-origin: right;
     transition: transform var(--d-hover) var(--ease-out);
   }
   .nav-links a:hover { color: var(--bone); }
   .nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+  .nav-links a.cur { color: var(--bone); }
+  .nav-links a.cur::after { transform: scaleX(1); transform-origin: left; }
+  @media (max-width: 700px) {
+    .nav-links { gap: 14px; }
+    .nav-links a { font-size: var(--fs-mono-1); letter-spacing: .05em; }
+  }
 
   /* ============ Hero ============ */
-  .cs-hero { padding: 170px 0 72px; }
+  .cs-hero { padding: clamp(110px, 18vw, 170px) 0 72px; }
   .eyebrow {
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .18em;
     text-transform: uppercase; color: var(--amber);
     display: inline-flex; align-items: center; gap: 10px;
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .1s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .05s forwards;
   }
   .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--amber); }
 
@@ -135,7 +133,7 @@
     margin-top: 22px;
     max-width: 14ch;
     text-wrap: balance;
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .22s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .12s forwards;
   }
 
   .standfirst {
@@ -144,7 +142,7 @@
     font-size: clamp(18px, 2.2vw, 22px);
     line-height: 1.55;
     color: var(--muted);
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .36s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .2s forwards;
   }
   .standfirst em { color: var(--bone); font-style: normal; }
 
@@ -154,7 +152,7 @@
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .08em;
     text-transform: uppercase;
     color: var(--faint);
-    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .5s forwards;
+    opacity: 0; animation: fadeup var(--d-reveal) var(--ease-out) .28s forwards;
   }
   .hero-meta span b { color: var(--muted); font-weight: 400; display: block; margin-top: 4px; text-transform: none; }
 
@@ -186,7 +184,7 @@
   @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
 
   /* ============ Sections ============ */
-  section.cs { padding: clamp(80px, 10vw, 140px) 0 0; }
+  section.cs { padding: clamp(64px, 8vw, 110px) 0 0; }
 
   .sec-head {
     position: relative;
@@ -262,13 +260,14 @@
   .viz-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 18px; }
   .viz-scroll:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
   .viz svg { display: block; }
-  @media (max-width: 700px) {
+  @media (max-width: 1024px) {
     .viz { position: relative; }
     .viz-scroll::after {
       content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 36px;
       pointer-events: none;
       background: linear-gradient(to right, transparent, var(--surface));
     }
+    .viz figcaption { position: relative; background: var(--surface); }
     .viz figcaption::after { content: " \00B7 drag \2192"; color: var(--faint); }
   }
   .viz figcaption, .quote figcaption {
@@ -292,7 +291,6 @@
   .bx      { fill: var(--ink); stroke: var(--line); }
   .bx-hot  { fill: var(--ink); stroke: var(--amber-dim); }
   .bx-off  { fill: var(--ink); stroke: var(--faint); stroke-dasharray: 4 4; }
-  .ln      { stroke: var(--line); fill: none; }
   .ln-dim  { stroke: var(--faint); fill: none; }
   .ln-amb  { stroke: var(--amber-dim); fill: none; }
   .ln-red  { stroke: var(--red); fill: none; }
@@ -369,7 +367,7 @@
   .reveal.in { opacity: 1; transform: none; }
 
   /* ============ CTA + footer ============ */
-  .cta-block { padding: clamp(100px, 13vw, 180px) 0 40px; }
+  .cta-block { padding: clamp(80px, 10vw, 140px) 0 40px; }
   .cta-block h2 {
     font-family: var(--display); font-weight: 700;
     font-size: clamp(36px, 6.4vw, 76px);
@@ -394,7 +392,8 @@
     .cta { font-size: var(--fs-mono-2); padding: 14px 20px; letter-spacing: .06em; }
   }
   .back-link {
-    display: inline-block; margin-top: 36px; margin-right: 26px;
+    display: inline-block; margin-top: 24px; margin-right: 26px;
+    padding: 12px 0;
     font-family: var(--mono); font-size: var(--fs-mono-2); letter-spacing: .12em;
     text-transform: uppercase; color: var(--muted);
     transition: color var(--d-hover) var(--ease-out);
@@ -431,10 +430,12 @@
 
 <header>
   <div class="wrap nav">
-    <a class="mark" href="/">SP<b>&mdash;</b>2026</a>
+    <a class="mark" href="index.html">SP<b>&mdash;</b>2026</a>
     <ul class="nav-links">
-      <li><a href="/">&larr; Back</a></li>
-      <li><a href="/#contact">Contact</a></li>
+      <li><a href="cairn.html">Cairn</a></li>
+      <li><a class="cur" aria-current="true" href="trading-lab.html">Trading Lab</a></li>
+      <li><a href="how-i-build.html">Method</a></li>
+      <li><a href="#contact">Contact</a></li>
     </ul>
   </div>
 </header>
@@ -501,8 +502,7 @@
       <h2 class="reveal">Every backtest is a liar</h2>
       <div class="prose">
         <p class="reveal">
-          Hobbyist trading systems die the same death: a backtest &mdash; a
-          replay of a strategy&apos;s rules over historical data &mdash; that
+          Hobbyist trading systems die the same death: a backtest that
           flatters. Look-ahead bias (trading on information the strategy
           couldn&apos;t have had yet), costless, perfect fills (order
           executions at prices you&apos;d never actually get), parameters
@@ -829,10 +829,6 @@
           layer shipped before any new feature did. Getting told your reports
           flatter you, by your own review process, and reordering everything
           in response: that&apos;s the system working on its own author.
-          It is also how everything I build gets reviewed: independent
-          adversarial lenses pushed through the real artifact, every finding
-          triaged &mdash; fixed or rejected with a written reason &mdash;
-          before anything ships.
         </p>
       </div>
 
@@ -973,16 +969,12 @@
           <strong>ML-ready by construction</strong>: a learned model is just
           another strategy emitting 0-or-1 exposure, and it gets no shortcuts
           &mdash; the same walk-forward windows, the same one-shot holdout,
-          the same regime splits, the same gate. And the lab itself is built
-          the way everything I ship is built: directed agent pipelines under
-          an agent contract file in the repo, with the test suite deciding
-          what lands. The repo is private; this page is
-          the tour.
+          the same regime splits, the same gate. The repo is private; this
+          page is the tour.
         </p>
         <p class="reveal">
-          The summary: I set out to build a system that couldn&apos;t
-          lie to me, and the proof it works is that it keeps delivering news I
-          don&apos;t want. Every claim on this page traces to a test, a
+          I set out to build a system that couldn&apos;t lie to me, and the
+          proof it works is that it keeps delivering news I don&apos;t want. Every claim on this page traces to a test, a
           report, or a critique in the repo. That&apos;s the job.
         </p>
       </div>
@@ -1027,7 +1019,7 @@
   </section>
 
   <!-- ================= CTA ================= -->
-  <section class="cta-block">
+  <section class="cta-block" id="contact">
     <div class="wrap">
       <h2 class="reveal">Want to watch the gate <em>say FAIL?</em></h2>
       <p class="cta-sub reveal">
@@ -1038,10 +1030,11 @@
       <a class="cta reveal" href="mailto:sravan.pattabhi97@gmail.com">
         sravan.pattabhi97@gmail.com <span class="cta-arr" aria-hidden="true">&nearr;</span>
       </a>
-      <br>
-      <a class="back-link reveal" href="/">&larr; Back to the portfolio</a>
-      <a class="back-link reveal" href="how-i-build.html">The method behind this page &rarr;</a>
-      <a class="back-link reveal" href="cairn.html">Next case study: Cairn &rarr;</a>
+      <nav aria-label="Keep reading">
+        <a class="back-link reveal" href="how-i-build.html">Next: Method &rarr;</a>
+        <a class="back-link reveal" href="cairn.html">Cairn &rarr;</a>
+        <a class="back-link reveal" href="index.html">Portfolio &rarr;</a>
+      </nav>
       <footer>
         <span>&copy; 2026 Sravan Pattabhi</span>
         <span>Case study &mdash; Trading Lab &mdash; one HTML file</span>
@@ -1084,8 +1077,16 @@
         en.target.classList.add("in");
         io.unobserve(en.target);
       });
-    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
-    revealEls.forEach(function (el) { io.observe(el); });
+    }, { threshold: 0.05, rootMargin: "0px 0px 12% 0px" });
+    revealEls.forEach(function (el) {
+      /* anything already above the viewport bottom composes immediately --
+         deep-anchor arrivals never land on blank blocks */
+      if (el.getBoundingClientRect().top < window.innerHeight) {
+        el.classList.add("in");
+      } else {
+        io.observe(el);
+      }
+    });
   } else {
     revealEls.forEach(function (el) { el.classList.add("in"); });
   }
