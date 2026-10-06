@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 &mdash; Sravan Pattabhi</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0C0E13">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=IBM+Plex+Mono:wght@400&display=swap">
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      background: #0C0E13; color: #EAE5D9; min-height: 100svh;
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+      padding: 24px;
+    }
+    .box { max-width: 560px; }
+    .eyebrow {
+      font-family: "IBM Plex Mono", Menlo, monospace; font-size: 12px;
+      letter-spacing: .18em; text-transform: uppercase; color: #E8A33D;
+      display: inline-flex; align-items: center; gap: 10px;
+    }
+    .eyebrow::before { content: ""; width: 28px; height: 1px; background: #E8A33D; }
+    h1 {
+      font-family: "Bricolage Grotesque", "Arial Narrow", Impact, sans-serif;
+      font-weight: 700; font-size: clamp(44px, 10vw, 88px);
+      line-height: 1; letter-spacing: -0.02em; margin-top: 18px;
+    }
+    p { color: #8A90A5; margin-top: 18px; font-size: 17px; line-height: 1.6; }
+    a.home {
+      display: inline-flex; align-items: center; gap: 10px; margin-top: 32px;
+      font-family: "IBM Plex Mono", Menlo, monospace; font-size: 13px;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: #0C0E13; background: #E8A33D; text-decoration: none;
+      padding: 14px 24px; border-radius: 99px;
+    }
+    a.home:focus-visible { outline: 2px solid #EAE5D9; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <main class="box">
+    <span class="eyebrow">HTTP 404 &mdash; route not found</span>
+    <h1>Lost packet.</h1>
+    <p>
+      This address doesn&apos;t resolve to anything &mdash; but the system fails
+      soft, so nothing crashed. Head back to the pipeline.
+    </p>
+    <a class="home" href="/">Back home &rarr;</a>
+  </main>
+</body>
+</html>
